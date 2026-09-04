@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const allTags = [...new Set(terms.flatMap((t) => t.fm.tags ?? []))].sort();
 	return {
 		term: summary(term),
-		body: splitTitle(term.body).rest,
+		body: splitTitle(term.body, term.fm.term).rest,
 		rendered: { definition: rendered.definition, body: rendered.body, termHtml: rendered.termHtml, aliasesHtml: rendered.aliasesHtml },
 		issues,
 		cards: { fwd: due('fwd'), rev: due('rev') },

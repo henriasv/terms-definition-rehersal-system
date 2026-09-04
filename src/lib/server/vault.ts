@@ -2,7 +2,6 @@
  * Filesystem access to the vault. Every write is tempfile + rename.
  */
 import { promises as fs } from 'node:fs';
-import matter from 'gray-matter';
 import path from 'node:path';
 import { newTermFile, parseTerm, patchTermRaw, renameInRaw, rewriteLinks, slugify, type NewTermInput, type Term, type TermPatch } from '../term.ts';
 import { parseLog, reduceLog, type LogLine } from '../reviews.ts';
@@ -128,7 +127,9 @@ export async function rewriteLinksEverywhere(oldTerm: { term: string; slug: stri
 		if (t.slug === oldTerm.slug || t.slug === slugify(newName)) continue;
 		const body = rewriteLinks(t.body, oldTerm, newName);
 		if (body === null) continue;
-		await atomicWrite(termPath(t.slug, vault), matter.stringify(body, matter(t.raw).data));
+		// Splice the new body under the untouched frontmatter bytes.
+		const fmBlock = t.raw.slice(0, t.raw.length - t.body.length);
+		await atomicWrite(termPath(t.slug, vault), fmBlock + body);
 		changed.push(t.slug);
 	}
 	return changed;
@@ -146,7 +147,9 @@ export async function saveTerm(slug: string, patch: TermPatch, vault = vaultPath
 	} catch (e) {
 		throw new VaultError((e as Error).message, 400);
 	}
-	if (out.slug === slug) {
+	// Only a changed name moves the file. Hand-named files (slug ≠ slugify(name)) stay where they are.
+	const nameChanged = patch.term !== undefined && patch.term.trim() !== old.fm.term;
+	if (out.slug === slug || !nameChanged) {
 		await atomicWrite(termPath(slug, vault), out.raw);
 		return { term: parseTerm(slug, out.raw), renamed: false };
 	}

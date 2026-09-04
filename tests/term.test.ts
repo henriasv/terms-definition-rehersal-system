@@ -131,3 +131,52 @@ describe('plainName wrappers, withoutSection, rewriteLinks', () => {
 		expect(rewriteLinks('nothing', { term: 'Old name', slug: 'old-name' }, 'New name')).toBeNull();
 	});
 });
+
+describe('review findings', () => {
+	it('renameInRaw is safe with $ patterns and keeps the blank line', () => {
+		const raw = `---\nterm: Foo\n---\n\n# Foo\n\n## Definition\n\nx\n`;
+		const out = renameInRaw(raw, "$\\Delta$'s rule");
+		expect(out).toContain("\n# $\\Delta$'s rule\n\n## Definition\n\nx\n");
+		expect(out.split('## Definition').length).toBe(2);
+	});
+	it('dedupes tags and aliases', () => {
+		const t = parseTerm('t', `---\nterm: T\ntags: [Chemistry, chemistry]\naliases: [ZP, zp, ZP]\n---\n`);
+		expect(t.fm.tags).toEqual(['chemistry']);
+		expect(t.fm.aliases).toEqual(['ZP']);
+	});
+	it('keeps a custom H1 and does not duplicate it', () => {
+		const raw = `---\nterm: PZC\n---\n\n# Point of zero charge (PZC)\n\n## Definition\n\nx\n`;
+		const t = parseTerm('pzc', raw);
+		expect(splitTitle(t.body, 'PZC').title).toBeNull();
+		const out = patchTermRaw(raw, { math: 'typst' }).raw;
+		expect(out).toContain('# Point of zero charge (PZC)');
+		expect(out.match(/^# /gm)?.length).toBe(1);
+		const intro = `---\nterm: Foo\n---\n\nIntro\n\n# Foo\n\n## Definition\n\nx\n`;
+		expect(patchTermRaw(intro, { tags: ['a'] }).raw.match(/^# /gm)?.length).toBe(1);
+	});
+	it('keeps frontmatter bytes when only the body changes, and normalises typed values otherwise', () => {
+		const raw = `---\nterm: Foo\ntags: [a, b]\nadded: 2024-01-05\nsource: 2019\n---\n\n# Foo\n\n## Definition\n\nx\n`;
+		const bodyOnly = patchTermRaw(raw, { body: '## Definition\n\ny\n' }).raw;
+		expect(bodyOnly.startsWith('---\nterm: Foo\ntags: [a, b]\nadded: 2024-01-05\nsource: 2019\n---')).toBe(true);
+		const t = parseTerm('foo', raw);
+		expect(t.fm.source).toBe('2019');
+		expect(t.fm.added).toBe('2024-01-05');
+		const changed = parseTerm('foo', patchTermRaw(raw, { tags: ['c'], source: t.fm.source }).raw);
+		expect(changed.fm.added).toBe('2024-01-05');
+		expect(changed.fm.source).toBe('2019');
+		expect(changed.raw).not.toContain('T00:00:00');
+	});
+	it('legacy smiles field becomes an alias and is dropped on save', () => {
+		const raw = `---\nterm: Aspirin\nsmiles: CC(=O)O\n---\n\n# Aspirin\n\n## Definition\n\nx\n`;
+		const t = parseTerm('aspirin', raw);
+		expect(t.fm.aliases).toEqual(['smiles:CC(=O)O']);
+		const saved = patchTermRaw(raw, { aliases: t.fm.aliases }).raw;
+		expect(saved).not.toContain('smiles: CC');
+		expect(saved).toContain('smiles:CC(=O)O');
+	});
+	it('string reverse and nested fences', () => {
+		const t = parseTerm('t', '---\nterm: T\nreverse: "false"\n---\n\n## Definition\n\n````\n```\n## not a heading\n```\n````\n\n## Notes\n\nn\n');
+		expect(t.fm.reverse).toBe(false);
+		expect(t.notes).toBe('n');
+	});
+});

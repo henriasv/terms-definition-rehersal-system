@@ -112,7 +112,13 @@ export function parseLog(text: string): { lines: LogLine[]; bad: number[] } {
 		if (!s) return;
 		try {
 			const obj = JSON.parse(s);
-			if (obj && typeof obj.t === 'string') lines.push(obj as LogLine);
+			const ok =
+				obj &&
+				typeof obj.t === 'string' &&
+				(typeof obj.event === 'string'
+					? (obj.event === 'rename' && typeof obj.from === 'string' && typeof obj.to === 'string') || ((obj.event === 'reset' || obj.event === 'undo') && typeof obj.card === 'string')
+					: typeof obj.card === 'string' && [1, 2, 3, 4].includes(obj.rating) && obj.state && typeof obj.state.due === 'string');
+			if (ok) lines.push(obj as LogLine);
 			else bad.push(i + 1);
 		} catch {
 			bad.push(i + 1);

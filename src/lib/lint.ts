@@ -34,6 +34,9 @@ export function lintTerm(term: Term, ctx: LintContext): LintIssue[] {
 	if (!term.defined) {
 		issues.push({ slug: term.slug, level: 'info', code: 'undefined', message: 'No definition yet; excluded from review.' });
 	}
+	if (typeof (term.fm as Record<string, unknown>).smiles === 'string') {
+		issues.push({ slug: term.slug, level: 'warn', code: 'deprecated-smiles', message: 'The `smiles:` field is obsolete; it is shown as an alias for now.', fix: 'Save the term once from the app (or move the value to an alias `smiles:…`) to migrate the file.' });
+	}
 	if (!term.fm.tags?.length) {
 		issues.push({ slug: term.slug, level: 'info', code: 'untagged', message: 'No tags.' });
 	}

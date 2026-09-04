@@ -14,7 +14,7 @@
 		e.preventDefault();
 		try {
 			const r = await api<{ terms: { slug: string }[] }>('/api/terms', { method: 'POST', json: { term, tags, aliases, math, definition } });
-			await goto(`/terms/${r.terms[0].slug}`);
+			await goto(`/terms/${encodeURIComponent(r.terms[0].slug)}`);
 		} catch (x) {
 			err = (x as Error).message;
 		}

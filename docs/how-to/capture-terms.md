@@ -22,7 +22,7 @@ Name, aliases, tags, math dialect, source and the reverse-card switch are edited
 
 ## By hand
 
-Create `Terms/<slug>.md` in any editor. The only required frontmatter field is `term:`. See [term file format](../reference/term-file-format.md). The slug must match `slugify(term)`; `pnpm terms lint` tells you if it does not, and `pnpm terms rename` fixes it.
+Create `Terms/<slug>.md` in any editor. The only required frontmatter field is `term:`. See [term file format](../reference/term-file-format.md). Any safe filename works (`Zeta Potential.md` included); the canonical name is `slugify(term)`, `pnpm terms lint` tells you when they differ, and `pnpm terms rename` normalises it. Saving from the app never moves a file unless you change the name.
 
 ## Linking terms
 

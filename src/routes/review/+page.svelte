@@ -39,6 +39,7 @@
 			lookahead = r.lookaheadMinutes;
 			idx = 0;
 			done = { total: 0, again: 0 };
+			last = null;
 			phase = queue.length ? 'running' : 'done';
 			show();
 		} catch (e) {
@@ -166,11 +167,11 @@
 					{/if}
 					{#if card.notesHtml.trim()}
 						<details class="note" style="margin-top:1rem">
-							<summary>Notes · <a href="/terms/{card.slug}">open term</a></summary>
+							<summary>Notes · <a href="/terms/{encodeURIComponent(card.slug)}">open term</a></summary>
 							<div style="margin-top:0.6rem"><Rendered html={card.notesHtml} /></div>
 						</details>
 					{:else}
-						<p class="small muted" style="margin-top:1rem"><a href="/terms/{card.slug}">Open term</a></p>
+						<p class="small muted" style="margin-top:1rem"><a href="/terms/{encodeURIComponent(card.slug)}">Open term</a></p>
 					{/if}
 				</div>
 				<div class="rate">

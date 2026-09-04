@@ -16,9 +16,29 @@ export function scanMath(text: string): MathSegment[] {
 	let line = 1;
 	let inFence = false;
 	let fenceMark = '';
+	let prevBlank = true; // start of text counts as a blank line before
+	let inIndented = false;
 	const n = text.length;
 	while (i < n) {
 		const ch = text[i];
+		const atLineStart = i === 0 || text[i - 1] === '\n';
+		if (atLineStart && !inFence) {
+			const eol0 = text.indexOf('\n', i);
+			const lineText = text.slice(i, eol0 === -1 ? n : eol0);
+			const blank = lineText.trim() === '';
+			const indented = /^(?: {4}|\t)/.test(lineText);
+			// CommonMark indented code: 4+ spaces after a blank line (or continuing such a block).
+			if (indented && (prevBlank || inIndented)) {
+				inIndented = true;
+				if (eol0 === -1) break;
+				i = eol0 + 1;
+				line++;
+				prevBlank = false;
+				continue;
+			}
+			if (!blank) inIndented = false;
+			prevBlank = blank;
+		}
 		// Fenced code blocks: a line starting with ``` or ~~~
 		if ((i === 0 || text[i - 1] === '\n') && /^[ \t]{0,3}(```|~~~)/.test(text.slice(i, i + 8))) {
 			const m = /^[ \t]{0,3}(```|~~~)/.exec(text.slice(i, i + 8))!;

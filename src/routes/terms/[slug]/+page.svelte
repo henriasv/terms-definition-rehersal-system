@@ -62,8 +62,9 @@
 	});
 
 	// Leaving with unsaved edits asks first (in-app navigation and tab close alike).
+	let leaving = false; // set after a successful delete so the guard lets the redirect through
 	beforeNavigate(({ cancel, willUnload }) => {
-		if (!dirty) return;
+		if (!dirty || leaving) return;
 		if (willUnload) {
 			cancel();
 			return;
@@ -108,10 +109,10 @@
 		if (!dirty || busy) return;
 		busy = true;
 		try {
-			const r = await api<{ term: { slug: string }; renamed: boolean }>(`/api/terms/${loadedSlug}`, { method: 'PUT', json: { ...meta, body } });
+			const r = await api<{ term: { slug: string }; renamed: boolean }>(`/api/terms/${encodeURIComponent(loadedSlug)}`, { method: 'PUT', json: { ...meta, body } });
 			savedKey = snapshot(meta, body);
 			if (r.renamed) {
-				await goto(`/terms/${r.term.slug}`, { invalidateAll: true });
+				await goto(`/terms/${encodeURIComponent(r.term.slug)}`, { invalidateAll: true });
 				say('Saved; file renamed');
 			} else {
 				await invalidateAll();
@@ -147,14 +148,15 @@
 	}
 	async function remove() {
 		if (!confirm(`Delete "${data.term.plain}"? The file is removed; review history stays in the log.`)) return;
-		await api(`/api/terms/${loadedSlug}`, { method: 'DELETE' });
+		await api(`/api/terms/${encodeURIComponent(loadedSlug)}`, { method: 'DELETE' });
+		leaving = true;
 		await goto('/terms', { invalidateAll: true });
 	}
 	const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : 'never reviewed');
 </script>
 
 <svelte:head><title>{data.term.plain}</title></svelte:head>
-<svelte:window onkeydown={onKey} onbeforeunload={(e) => { if (dirty) e.preventDefault(); }} />
+<svelte:window onkeydown={onKey} onbeforeunload={(e) => { if (dirty && !leaving) e.preventDefault(); }} />
 <main class="wide fill">
 	<div class="row" style="margin-bottom:0.8rem">
 		<h1 style="margin:0"><Rendered html={termHtml} inline /></h1>

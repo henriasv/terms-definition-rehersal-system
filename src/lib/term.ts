@@ -89,14 +89,23 @@ export function slugify(name: string): string {
 
 export function normaliseTags(tags: unknown): string[] {
 	if (!Array.isArray(tags)) return [];
-	return tags
-		.map((t) => String(t).trim().replace(/^#/, '').toLowerCase())
-		.filter(Boolean);
+	return [...new Set(tags.map((t) => String(t).trim().replace(/^#/, '').toLowerCase()).filter(Boolean))];
 }
 
 export function normaliseAliases(aliases: unknown): string[] {
 	if (!Array.isArray(aliases)) return [];
-	return aliases.map((a) => String(a).trim()).filter(Boolean);
+	const seen = new Set<string>();
+	return aliases
+		.map((a) => String(a).trim())
+		.filter((a) => a && !seen.has(a.toLowerCase()) && seen.add(a.toLowerCase()));
+}
+
+/** Frontmatter scalars as strings; YAML may have typed them (dates, numbers). */
+function scalarString(v: unknown): string | undefined {
+	if (v === null || v === undefined) return undefined;
+	if (v instanceof Date) return v.toISOString().slice(0, 10);
+	const s = String(v).trim();
+	return s || undefined;
 }
 
 interface Section {
@@ -111,11 +120,15 @@ export function findSections(body: string): Section[] {
 	const lines = body.split('\n');
 	const sections: Section[] = [];
 	let offset = 0;
-	let inFence = false;
+	let fence: { mark: string; len: number } | null = null;
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
-		if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
-		const m = !inFence && /^##\s+(.+?)\s*$/.exec(line);
+		const f = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+		if (f) {
+			if (!fence) fence = { mark: f[1][0], len: f[1].length };
+			else if (f[1][0] === fence.mark && f[1].length >= fence.len) fence = null;
+		}
+		const m = !fence && /^##\s+(.+?)\s*$/.exec(line);
 		if (m) {
 			if (sections.length) sections[sections.length - 1].end = offset;
 			sections.push({ heading: m[1], start: offset + line.length + 1, end: body.length, line: i + 1 });
@@ -142,16 +155,24 @@ export function setSection(body: string, heading: string, content: string): stri
 export function parseTerm(slug: string, raw: string): Term {
 	const parsed = matter(raw);
 	const data = (parsed.data ?? {}) as Record<string, unknown>;
+	const aliases = normaliseAliases(data.aliases);
+	// Files from before SMILES moved into names: surface the field as an alias so the structure still shows.
+	const legacySmiles = scalarString(data.smiles);
+	if (legacySmiles && !aliases.some((a) => a.toLowerCase() === `smiles:${legacySmiles.toLowerCase()}`)) aliases.push(`smiles:${legacySmiles}`);
 	const fm: TermFrontmatter = {
 		...data,
-		term: typeof data.term === 'string' && data.term.trim() ? data.term.trim() : slug,
-		aliases: normaliseAliases(data.aliases),
+		term: scalarString(data.term) ?? slug,
+		aliases,
 		tags: normaliseTags(data.tags),
 		math: data.math === 'typst' ? 'typst' : 'latex'
 	};
 	if (typeof data.reverse === 'boolean') fm.reverse = data.reverse;
-	if (data.added instanceof Date) fm.added = data.added.toISOString().slice(0, 10);
-	else if (typeof data.added === 'string') fm.added = data.added;
+	else if (typeof data.reverse === 'string') fm.reverse = !/^(false|no|0)$/i.test(data.reverse.trim());
+	const added = scalarString(data.added);
+	if (added) fm.added = added;
+	const source = scalarString(data.source);
+	if (source) fm.source = source;
+	else delete fm.source;
 
 	const body = parsed.content;
 	const definition = getSection(body, 'Definition');
@@ -180,13 +201,13 @@ export function newTermFile(input: NewTermInput, now = new Date()): { slug: stri
 	const name = input.term.trim();
 	const slug = slugify(name);
 	if (!slug) throw new Error(noSlugMessage(name));
-	const data: Record<string, unknown> = {
-		term: name,
-		aliases: normaliseAliases(input.aliases ?? []),
-		tags: normaliseTags(input.tags ?? []),
-		math: input.math ?? 'latex',
-		added: input.added ?? todayISO(now)
-	};
+	const data: Record<string, unknown> = { term: name };
+	const aliases = normaliseAliases(input.aliases ?? []);
+	const tags = normaliseTags(input.tags ?? []);
+	if (aliases.length) data.aliases = aliases;
+	if (tags.length) data.tags = tags;
+	data.math = input.math ?? 'latex';
+	data.added = input.added ?? todayISO(now);
 	if (input.source) data.source = input.source.trim();
 	let body = `\n# ${name}\n\n## Definition\n\n## Notes\n`;
 	if (input.definition?.trim()) body = setSection(body, 'Definition', input.definition);
@@ -194,14 +215,9 @@ export function newTermFile(input: NewTermInput, now = new Date()): { slug: stri
 	return { slug, raw };
 }
 
-/** Rewrite the `term:` field (and H1) when a term is renamed. */
+/** Rewrite the `term:` field (and a matching H1) when a term is renamed. */
 export function renameInRaw(raw: string, newName: string): string {
-	const parsed = matter(raw);
-	const data = { ...(parsed.data as Record<string, unknown>), term: newName.trim() };
-	const oldName = String(parsed.data?.term ?? '');
-	let body = parsed.content;
-	if (oldName) body = body.replace(new RegExp(`^# ${escapeRegExp(oldName)}\\s*$`, 'm'), `# ${newName.trim()}`);
-	return matter.stringify(body, data);
+	return patchTermRaw(raw, { term: newName }).raw;
 }
 
 export function noSlugMessage(name: string): string {
@@ -272,16 +288,30 @@ export function resolveTermLink(target: string, terms: Term[]): Term | undefined
 	);
 }
 
-/** Split a body into its leading `# Title` line (if any) and the rest. */
-export function splitTitle(body: string): { title: string | null; rest: string } {
-	const m = /^\s*# ([^\n]*)\n?/.exec(body);
-	if (!m) return { title: null, rest: body.replace(/^\n+/, '') };
-	return { title: m[1].trim(), rest: body.slice(m[0].length).replace(/^\n+/, '') };
+/** True when two names are the same term title (plain text, case-insensitive). */
+export function sameTitle(a: string, b: string): boolean {
+	return plainName(a).toLowerCase() === plainName(b).toLowerCase();
 }
 
-/** Compose the canonical body: blank line, H1, blank line, content. */
+/**
+ * Split a body into the canonical `# Title` line and the rest. Only an H1 at the very
+ * top that matches the term name is treated as the canonical title; any other H1 is
+ * content and stays in the body.
+ */
+export function splitTitle(body: string, term?: string): { title: string | null; rest: string } {
+	const text = body.replace(/\r\n/g, '\n');
+	const m = /^\s*# ([^\n]*)\n?/.exec(text);
+	if (!m) return { title: null, rest: text.replace(/^\n+/, '') };
+	const title = m[1].trim();
+	if (term !== undefined && !sameTitle(title, term)) return { title: null, rest: text.replace(/^\n+/, '') };
+	return { title, rest: text.slice(m[0].length).replace(/^\n+/, '') };
+}
+
+/** Compose the canonical body. The H1 is added only when the content has none of its own. */
 export function joinTitle(title: string, rest: string): string {
-	const content = rest.replace(/^\n+/, '').replace(/\s+$/, '');
+	const content = rest.replace(/\r\n/g, '\n').replace(/^\n+/, '').replace(/\s+$/, '');
+	const hasH1 = /(^|\n)# \S/.test(content);
+	if (hasH1) return `\n${content}\n`;
 	return `\n# ${title.trim()}\n\n${content}${content ? '\n' : ''}`;
 }
 
@@ -302,27 +332,52 @@ export interface TermPatch {
  */
 export function patchTermRaw(raw: string, patch: TermPatch): { raw: string; slug: string } {
 	const parsed = matter(raw);
-	const data: Record<string, unknown> = { ...(parsed.data as Record<string, unknown>) };
+	// Normalised view of the existing frontmatter (dates as ISO days, no nulls) so a body-only
+	// edit compares equal and the original bytes are kept.
+	const before: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(parsed.data as Record<string, unknown>)) {
+		if (v === null || v === undefined) continue;
+		before[k] = v instanceof Date ? v.toISOString().slice(0, 10) : v;
+	}
+	const data: Record<string, unknown> = { ...before };
+	const oldName = scalarString(before.term) ?? '';
 	if (patch.term !== undefined) {
 		const name = patch.term.trim();
 		if (!name) throw new Error('Term name cannot be empty');
 		data.term = name;
 	}
-	if (patch.aliases !== undefined) data.aliases = normaliseAliases(patch.aliases);
-	if (patch.tags !== undefined) data.tags = normaliseTags(patch.tags);
+	if (patch.aliases !== undefined) {
+		const a = normaliseAliases(patch.aliases);
+		if (a.length) data.aliases = a;
+		else delete data.aliases;
+		delete data.smiles; // legacy field; its value now lives in the aliases
+	}
+	if (patch.tags !== undefined) {
+		const t = normaliseTags(patch.tags);
+		if (t.length) data.tags = t;
+		else delete data.tags;
+	}
 	if (patch.math !== undefined) data.math = patch.math === 'typst' ? 'typst' : 'latex';
 	if (patch.reverse !== undefined) {
 		if (patch.reverse === false) data.reverse = false;
 		else delete data.reverse;
 	}
 	if (patch.source !== undefined) {
-		if (patch.source && patch.source.trim()) data.source = patch.source.trim();
+		const src = scalarString(patch.source);
+		if (src) data.source = src;
 		else delete data.source;
 	}
+	for (const k of Object.keys(data)) if (data[k] === null || data[k] === undefined) delete data[k];
+
 	const title = String(data.term ?? '');
-	const rest = patch.body !== undefined ? patch.body : splitTitle(parsed.content).rest;
+	const rest = patch.body !== undefined ? patch.body : splitTitle(parsed.content, oldName).rest;
 	const body = joinTitle(title, rest);
 	const slug = slugify(title);
 	if (!slug) throw new Error(noSlugMessage(title));
-	return { raw: matter.stringify(body, data), slug };
+
+	// Keep the frontmatter bytes untouched when nothing in it changed (YAML re-dumps reorder and requote).
+	const same = JSON.stringify(data) === JSON.stringify(before);
+	const fmBlock = raw.slice(0, raw.length - parsed.content.length);
+	const out = same && fmBlock.trim().startsWith('---') ? fmBlock + body : matter.stringify(body, data);
+	return { raw: out, slug };
 }

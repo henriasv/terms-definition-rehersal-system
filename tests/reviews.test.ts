@@ -59,3 +59,13 @@ describe('undo and training set', () => {
 		expect(reduceLog([r1.line, { t: later.toISOString(), event: 'undo' as const, card: 'a#fwd' }]).has('a#fwd')).toBe(false);
 	});
 });
+
+describe('log tolerance', () => {
+	it('skips review lines without state and unknown events', () => {
+		const text = '{"t":"2024-01-01T00:00:00Z","card":"x#fwd","rating":3}\n{"t":"2024-01-01T00:00:00Z","event":"bogus"}\n';
+		const { lines, bad } = parseLog(text);
+		expect(lines).toEqual([]);
+		expect(bad).toEqual([1, 2]);
+		expect(() => reduceLog(lines)).not.toThrow();
+	});
+});

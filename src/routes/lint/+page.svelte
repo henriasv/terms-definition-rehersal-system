@@ -29,7 +29,7 @@
 				{#each data.issues as i (i.slug + i.code + (i.line ?? '') + i.message)}
 					<tr>
 						<td><span class="badge {i.level}">{i.level}</span></td>
-						<td>{#if i.slug}<a href="/terms/{i.slug}">{i.slug}</a>{:else}<span class="muted">—</span>{/if}</td>
+						<td>{#if i.slug}<a href="/terms/{encodeURIComponent(i.slug)}">{i.slug}</a>{:else}<span class="muted">—</span>{/if}</td>
 						<td class="mono small">{i.line ?? ''}</td>
 						<td>
 							{i.message}{#if i.fix}<div class="small muted">{i.fix}</div>{/if}

@@ -19,8 +19,11 @@ export interface TypstResult {
 const RENDER_VERSION = '2';
 const PREAMBLE = `#set page(width: auto, height: auto, margin: 0pt, fill: none)\n#set text(size: 16pt)\n`;
 
+/** Lines the wrapper puts before the snippet, per mode (for error line numbers). */
+const PREAMBLE_LINES: Record<TypstMode, number> = { inline: 2, display: 2, block: 3 };
+
 function wrap(src: string, mode: TypstMode): string {
-	const s = src.trim();
+	const s = mode === 'inline' ? src.trim() : src.replace(/^[ \t]*\n?/, '').replace(/\s+$/, '');
 	// Inline: a zero-width strut 1.5em above and below the baseline makes the page 3em tall with the
 	// baseline exactly in the middle (unless the snippet is taller, in which case only the top grows).
 	if (mode === 'inline') return `${PREAMBLE}#box(width: 0pt, height: 3em, baseline: 1.5em)$${s}$\n`;
@@ -29,10 +32,14 @@ function wrap(src: string, mode: TypstMode): string {
 }
 
 let available: Promise<boolean> | undefined;
+/** Memoised only on success, so installing typst later is picked up without a restart. */
 export function typstAvailable(): Promise<boolean> {
 	if (!available) {
 		available = new Promise((resolve) => {
-			execFile(loadConfig().typstBin, ['--version'], (err) => resolve(!err));
+			execFile(loadConfig().typstBin, ['--version'], (err) => {
+				if (err) available = undefined;
+				resolve(!err);
+			});
 		});
 	}
 	return available;
@@ -64,9 +71,9 @@ async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
 	}
 }
 
-/** Shift the preamble's 2 lines out of typst's error line numbers. */
-function fixLines(msg: string): string {
-	return msg.replace(/snippet:(\d+):(\d+)/g, (_m, l, c) => `line ${Math.max(1, Number(l) - 2)}:${c}`);
+/** Shift the wrapper's preamble lines out of typst's error line numbers. */
+function fixLines(msg: string, mode: TypstMode): string {
+	return msg.replace(/snippet:(\d+):(\d+)/g, (_m, l, c) => `line ${Math.max(1, Number(l) - PREAMBLE_LINES[mode])}:${c}`);
 }
 
 export async function renderTypst(src: string, mode: TypstMode, vault = vaultPath()): Promise<TypstResult> {
@@ -79,7 +86,7 @@ export async function renderTypst(src: string, mode: TypstMode, vault = vaultPat
 	}
 	if (!(await typstAvailable())) return { error: 'typst CLI not found. Install typst (https://typst.app) or set TYPST_BIN.' };
 	const res = await withSlot(() => run(loadConfig(vault).typstBin, wrap(src, mode)));
-	if (res.error) return { error: fixLines(res.error) };
+	if (res.error) return { error: fixLines(res.error, mode) };
 	const svg = tidySvg(res.svg!, mode);
 	await atomicWrite(cacheFile, svg).catch(() => {});
 	return { svg };

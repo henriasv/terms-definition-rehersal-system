@@ -18,9 +18,11 @@ One file per term: `Terms/<slug>.md`. YAML frontmatter, then Markdown. The canon
 | `added` | ISO date | no | Set on creation. Orders new cards. |
 | `source` | string | no | Free text, e.g. a literature-vault citekey. |
 
-Unknown fields are preserved. The app edits these through form fields and rewrites the frontmatter on save; the H1 in the body is kept equal to `term`.
+Unknown fields are preserved. The app edits these through form fields. A save that only changes the body leaves the frontmatter bytes untouched; a save that changes a field re-serialises the block (YAML dates become `YYYY-MM-DD` strings, flow lists become block lists, empty lists are dropped).
 
 ## Body
+
+The H1 is the term name. The editor hides it and writes it back on save. An H1 that differs from the name (or is not at the top) is ordinary content: it stays visible in the editor and is left alone.
 
 ```markdown
 # Term name

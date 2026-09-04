@@ -21,7 +21,7 @@ export function summary(t: Term) {
 		math: t.math,
 		added: t.fm.added ?? null,
 		reverse: t.fm.reverse !== false,
-		source: typeof t.fm.source === 'string' ? t.fm.source : null
+		source: t.fm.source ?? null
 	};
 }
 export type TermSummary = ReturnType<typeof summary>;

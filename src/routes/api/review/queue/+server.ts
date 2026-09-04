@@ -22,7 +22,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			if (!rendered.has(it.slug)) {
 				const [d, b, term] = await Promise.all([
 					renderMarkdown(t.definition, { math: t.math, terms }),
-					renderMarkdown(withoutSection(splitTitle(t.body).rest, 'Definition'), { math: t.math, terms }),
+					renderMarkdown(withoutSection(splitTitle(t.body, t.fm.term).rest, 'Definition'), { math: t.math, terms }),
 					decorate(t)
 				]);
 				rendered.set(it.slug, { definition: d.html, body: b.html, term });

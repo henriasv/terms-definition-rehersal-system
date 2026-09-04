@@ -70,3 +70,14 @@ describe('orphan assets', () => {
 		expect(issues.filter((i) => i.code === 'orphan-asset').map((i) => i.asset)).toEqual(['lost.png']);
 	});
 });
+
+describe('indented code blocks', () => {
+	it('skips $ inside 4-space indented code after a blank line', () => {
+		const t = 'text $x$\n\n    echo $HOME and $PATH\n    more $y$\n\nafter $z$';
+		expect(scanMath(t).map((s) => s.src)).toEqual(['x', 'z']);
+	});
+	it('does not treat an indented continuation line as code', () => {
+		const t = 'para line\n    still para $a$\n';
+		expect(scanMath(t).map((s) => s.src)).toEqual(['a']);
+	});
+});

@@ -7,7 +7,7 @@ import { splitTitle, type Term } from '$lib/term';
 async function payload(term: Term) {
 	const terms = await listTerms();
 	const rendered = await renderTerm(term, terms);
-	return { term: { ...summary(term), termHtml: rendered.termHtml, aliasesHtml: rendered.aliasesHtml, raw: term.raw, body: splitTitle(term.body).rest }, rendered };
+	return { term: { ...summary(term), termHtml: rendered.termHtml, aliasesHtml: rendered.aliasesHtml, raw: term.raw, body: splitTitle(term.body, term.fm.term).rest }, rendered };
 }
 
 export const GET: RequestHandler = async ({ params }) => {

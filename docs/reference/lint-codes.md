@@ -10,7 +10,8 @@
 | `broken-link` | warn | `[[target]]` matches no term, name or alias. |
 | `missing-asset` | warn | `![[file]]` not present in `Assets/`. |
 | `orphan-asset` | info | A file in `Assets/` that no term embeds. The Lint page offers a delete button; `terms assets --prune` removes them all. |
-| `slug-mismatch` | warn | Filename does not equal `slugify(term)`. Fix: `terms rename`. |
+| `slug-mismatch` | warn | Filename does not equal `slugify(term)`. Everything still works (links by slug and log keys use the filename); `terms rename` normalises it. |
+| `deprecated-smiles` | warn | Old `smiles:` frontmatter field. It is shown as an alias; saving the term once migrates it. |
 | `duplicate-name` | warn | Two files share a `term:` (case-insensitive). |
 | `alias-collision` | warn | An alias equals another term's name. |
 | `undefined` | info | No definition; excluded from review. |

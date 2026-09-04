@@ -5,7 +5,7 @@
 import katex from 'katex';
 import { Marked, type Tokens } from 'marked';
 import { scanMath } from '../math.ts';
-import { SMILES_TOKEN, resolveTermLink, type MathDialect, type Term } from '../term.ts';
+import { SMILES_TOKEN, resolveTermLink, sameTitle, type MathDialect, type Term } from '../term.ts';
 import { renderTypst } from './typst.ts';
 
 export interface RenderError {
@@ -20,8 +20,8 @@ export interface RenderOptions {
 	math: MathDialect;
 	/** Known terms, for resolving [[links]]. */
 	terms: Term[];
-	/** Drop a leading `# Title` line (cards already show the title). */
-	stripTitle?: boolean;
+	/** Drop a leading `# Title` line when it matches this term name (cards already show the title). */
+	stripTitle?: string;
 	/** Added to every reported line number (e.g. the frontmatter length). */
 	lineOffset?: number;
 }
@@ -63,7 +63,7 @@ function makeMarked(terms: Term[], typstBlocks: string[]) {
 						return `<a class="asset-link" href="${url}" target="_blank" rel="noopener">${esc(t.label)}</a>`;
 					}
 					const hit = resolveTermLink(t.target, terms);
-					if (hit) return `<a class="wikilink" href="/terms/${hit.slug}">${esc(t.label)}</a>`;
+					if (hit) return `<a class="wikilink" href="/terms/${encodeURIComponent(hit.slug)}">${esc(t.label)}</a>`;
 					return `<a class="wikilink broken" href="/terms/new?name=${encodeURIComponent(t.target)}" title="No such term yet">${esc(t.label)}</a>`;
 				}
 			}
@@ -92,9 +92,15 @@ function makeMarked(terms: Term[], typstBlocks: string[]) {
 
 export async function renderMarkdown(md: string, opts: RenderOptions): Promise<{ html: string; errors: RenderError[] }> {
 	const errors: RenderError[] = [];
-	const offset = opts.lineOffset ?? 0;
+	let offset = opts.lineOffset ?? 0;
 	let text = md;
-	if (opts.stripTitle) text = text.replace(/^\s*# [^\n]*\n?/, '');
+	if (opts.stripTitle !== undefined) {
+		const m = /^\s*# ([^\n]*)\n?/.exec(text);
+		if (m && sameTitle(m[1], opts.stripTitle)) {
+			text = text.slice(m[0].length);
+			offset += (m[0].match(/\n/g) ?? []).length;
+		}
+	}
 
 	// 1. Pull math out before Markdown sees it.
 	const segs = scanMath(text);
@@ -127,7 +133,7 @@ export async function renderMarkdown(md: string, opts: RenderOptions): Promise<{
 		})
 	);
 	rendered.forEach((out, i) => {
-		html = html.replace(`<p>MATHTOKEN${i}X</p>`, out).replace(`MATHTOKEN${i}X`, out);
+		html = html.replace(`<p>MATHTOKEN${i}X</p>`, () => out).replace(`MATHTOKEN${i}X`, () => out);
 	});
 
 	// 4. Typst fenced blocks (always typst, regardless of the math flag).
@@ -135,7 +141,7 @@ export async function renderMarkdown(md: string, opts: RenderOptions): Promise<{
 	blocks.forEach((r, i) => {
 		const out = r.error ? `<pre class="math-error" title="${esc(r.error)}">${esc(typstBlocks[i])}</pre>` : r.svg!;
 		if (r.error) errors.push({ kind: 'typst', src: typstBlocks[i], message: r.error });
-		html = html.replace(`TYPSTBLOCK${i}X`, out);
+		html = html.replace(`TYPSTBLOCK${i}X`, () => out);
 	});
 
 	return { html, errors };
@@ -175,8 +181,8 @@ export async function renderInline(text: string, math: MathDialect): Promise<{ h
 			return `<span class="typst-inline">${r.svg}</span>`;
 		})
 	);
-	rendered.forEach((out, i) => (html = html.replace(`MATHTOKEN${i}X`, out)));
-	smiles.forEach((tok, i) => (html = html.replace(`SMILESTOKEN${i}X`, `<span class="smiles smiles-inline" data-smiles="${esc(tok)}" title="${esc(tok)}"></span>`)));
+	rendered.forEach((out, i) => (html = html.replace(`MATHTOKEN${i}X`, () => out)));
+	smiles.forEach((tok, i) => (html = html.replace(`SMILESTOKEN${i}X`, () => `<span class="smiles smiles-inline" data-smiles="${esc(tok)}" title="${esc(tok)}"></span>`)));
 	return { html, errors };
 }
 
@@ -190,7 +196,7 @@ export async function renderNames(term: Term) {
 export async function renderTerm(term: Term, terms: Term[]) {
 	const [definition, body, names] = await Promise.all([
 		renderMarkdown(term.definition, { math: term.math, terms }),
-		renderMarkdown(term.body, { math: term.math, terms, stripTitle: true, lineOffset: term.bodyLine - 1 }),
+		renderMarkdown(term.body, { math: term.math, terms, stripTitle: term.fm.term, lineOffset: term.bodyLine - 1 }),
 		renderNames(term)
 	]);
 	return { definition: definition.html, body: body.html, termHtml: names.termHtml, aliasesHtml: names.aliasesHtml, errors: [...names.errors, ...body.errors] };

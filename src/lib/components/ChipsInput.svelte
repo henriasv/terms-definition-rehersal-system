@@ -12,7 +12,11 @@
 
 	function commit() {
 		const parts = text.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
-		if (parts.length) values = [...values, ...parts.filter((p) => !values.includes(p))];
+		if (parts.length) {
+			const seen = new Set(values.map((v) => v.toLowerCase()));
+			const fresh = parts.filter((p) => !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase()));
+			if (fresh.length) values = [...values, ...fresh];
+		}
 		text = '';
 	}
 	function onkeydown(e: KeyboardEvent) {
@@ -31,7 +35,7 @@
 </script>
 
 <div class="chips" class:mono>
-	{#each values as v, i (v)}
+	{#each values as v, i (`${i}:${v}`)}
 		<span class="chip">{v}<button type="button" aria-label="Remove {v}" onclick={() => remove(i)}>×</button></span>
 	{/each}
 	<input bind:this={input} bind:value={text} list={listId} placeholder={values.length ? '' : placeholder} {onkeydown} onblur={commit} onchange={commit} autocomplete="off" />

@@ -32,7 +32,7 @@
 	<ul class="plain list-terms panel grow scrollable">
 		{#each shown as t (t.slug)}
 			<li>
-				<a class="name" href="/terms/{t.slug}"><Rendered html={t.termHtml} inline /></a>
+				<a class="name" href="/terms/{encodeURIComponent(t.slug)}"><Rendered html={t.termHtml} inline /></a>
 				{#if t.aliasesHtml.length}<span class="muted small aliases-line">{#each t.aliasesHtml as a, i (i)}<Rendered html={a} inline />{/each}</span>{/if}
 				{#if !t.defined}<span class="badge todo">to define</span>{/if}
 				{#if t.math === 'typst'}<span class="badge typst">typst</span>{/if}

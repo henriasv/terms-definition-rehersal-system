@@ -2,6 +2,6 @@
 	let { tags }: { tags: string[] } = $props();
 </script>
 
-{#each tags as tag (tag)}
+{#each tags as tag, i (`${i}:${tag}`)}
 	<a class="tag" href="/terms?tag={encodeURIComponent(tag)}">{tag}</a>
 {/each}
