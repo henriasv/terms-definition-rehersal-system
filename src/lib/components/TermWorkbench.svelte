@@ -198,14 +198,16 @@
 
 	/** In the Define queue, start with the cursor under `## Definition` so typing lands in the right section. */
 	$effect(() => {
+		// Depends only on the term (and the editor mounting), never on the draft text:
+		// re-running on keystrokes would drag the cursor back after every character.
 		void term.slug;
-		if (mode !== 'define' || !editor) return;
-		const m = /^##\s+Definition[^\n]*\n?/im.exec(body);
+		const ed = editor;
+		if (mode !== 'define' || !ed) return;
 		untrack(() => {
+			const m = /^##\s+Definition[^\n]*\n?/im.exec(body);
 			if (!m) return;
-			// Land on the line after the heading (the blank line, when there is one).
 			const pos = m.index + m[0].length;
-			setTimeout(() => editor?.focusAt(pos), 50);
+			setTimeout(() => ed.focusAt(pos), 50);
 		});
 	});
 </script>
