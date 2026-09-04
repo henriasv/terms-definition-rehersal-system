@@ -1,0 +1,43 @@
+{
+	"name": "terms-definition-rehersal-system",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"description": "Capture scientific terms as Markdown files and rehearse them as spaced-repetition flashcards.",
+	"license": "MIT",
+	"scripts": {
+		"dev": "vite dev --open",
+		"build": "vite build",
+		"start": "node build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"test": "vitest run",
+		"terms": "tsx scripts/terms.ts"
+	},
+	"dependencies": {
+		"gray-matter": "^4.0.3",
+		"katex": "^0.18.5",
+		"marked": "^18.0.11",
+		"smiles-drawer": "^2.4.1",
+		"ts-fsrs": "^5.4.2"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-node": "^5.5.7",
+		"@sveltejs/kit": "^2.63.0",
+		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@types/katex": "^0.16.7",
+		"@types/node": "^25.6.0",
+		"svelte": "^5.56.1",
+		"svelte-check": "^4.6.0",
+		"tsx": "^4.23.13",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.16",
+		"vitest": "^5.0.0"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
+	}
+}

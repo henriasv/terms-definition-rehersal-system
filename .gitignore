@@ -1,0 +1,17 @@
+node_modules/
+build/
+.svelte-kit/
+.output/
+.vercel/
+.netlify/
+.wrangler/
+/.env
+/.env.*
+!/.env.example
+!/.env.test
+*.log
+.DS_Store
+.vscode/
+.idea/
+# Per-machine setup state (vault path) written by setup scripts.
+setup/.local.conf
