@@ -3,15 +3,14 @@
 	import { api } from '$lib/client/api';
 	import ChipsInput from '$lib/components/ChipsInput.svelte';
 	import Rendered from '$lib/components/Rendered.svelte';
-	import Tags from '$lib/components/Tags.svelte';
 	let { data } = $props();
 	let names = $state('');
 	let tags = $state<string[]>([]);
 	let busy = $state(false);
 	let msg = $state('');
 
-	async function add(e: SubmitEvent) {
-		e.preventDefault();
+	async function add(e?: Event) {
+		e?.preventDefault();
 		const list = names.split('\n').map((s) => s.trim()).filter(Boolean);
 		if (!list.length) return;
 		busy = true;
@@ -31,64 +30,39 @@
 </script>
 
 <svelte:head><title>Terms</title></svelte:head>
-<main>
-	<div class="grid cols-2">
-		<section class="panel">
-			<h2>Capture</h2>
-			<p class="muted small">One term per line. Definitions can wait; tags apply to all lines.</p>
-			<form onsubmit={add} class="grid" style="gap:0.6rem">
-				<label class="field">Terms
-					<textarea bind:value={names} rows="4" placeholder="surface deprotonation constant&#10;zeta potential" onkeydown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add(e as unknown as SubmitEvent); }}></textarea>
-				</label>
-				<label class="field">Tags (Enter adds one; nest with /)
-					<ChipsInput bind:values={tags} suggestions={data.allTags} placeholder="chemistry/surface" />
-				</label>
-				<div class="row">
-					<button class="btn primary" type="submit" disabled={busy}>Add <kbd>⌘↵</kbd></button>
-					{#if msg}<span class="small muted">{msg}</span>{/if}
-				</div>
-			</form>
-		</section>
-		<section class="panel">
-			<h2>Rehearsal</h2>
-			<div class="grid cols-3" style="margin:0.8rem 0 1rem">
-				<div class="stat"><span class="n">{data.stats.due}</span><span class="l">due now</span></div>
-				<div class="stat"><span class="n">{data.stats.new}</span><span class="l">new cards</span></div>
-				<div class="stat"><span class="n">{data.stats.reviewed}</span><span class="l">cards in rotation</span></div>
+<main class="narrow">
+	<section style="display:flex;flex-direction:column;gap:var(--space-4)">
+		<div class="due-line">
+			<h1><span class="n">{data.stats.due}</span> <span class="l">due now</span></h1>
+			<span class="summary">{data.stats.new} new · {data.stats.reviewed} in rotation · {data.total} terms, {#if data.todo}<a href="/define" style="color:var(--color-accent-700)">{data.todo} still to define</a>{:else}all defined{/if}</span>
+			<a class="btn primary big right" href="/review">Start review <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+		</div>
+		<div class="hr" style="margin:0"></div>
+	</section>
+	<section class="home-grid">
+		<form style="display:flex;flex-direction:column;gap:var(--space-3)" onsubmit={add}>
+			<h2 style="margin:0">Capture</h2>
+			<p class="text-muted" style="font-size:13px;margin:0">One term per line. Definitions can wait; tags apply to all lines.</p>
+			<textarea class="capture" bind:value={names} placeholder={'surface deprotonation constant\nzeta potential'} onkeydown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add(e); }}></textarea>
+			<div style="display:flex;gap:var(--space-2);align-items:center">
+				<div style="flex:1"><ChipsInput bind:values={tags} suggestions={data.allTags} placeholder="tags for all lines" /></div>
+				<button class="btn primary" type="submit" disabled={busy}>Add</button>
 			</div>
-			<div class="row">
-				<a class="btn primary" href="/review">Start review</a>
-				<span class="small muted">{data.total} terms, {data.todo.length} still to define</span>
-			</div>
-		</section>
-	</div>
-
-	<div class="grid cols-2" style="margin-top:1.2rem">
-		<section class="panel">
-			<h2>To define <span class="muted small">({data.todo.length})</span></h2>
-			{#if data.todo.length === 0}
-				<p class="muted">Everything has a definition.</p>
-			{:else}
-				<ul class="plain list-terms">
-					{#each data.todo as t (t.slug)}
-						<li><a class="name" href="/terms/{encodeURIComponent(t.slug)}"><Rendered html={t.termHtml} inline /></a><span class="row small"><Tags tags={t.tags} /></span></li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
-		<section class="panel">
-			<h2>Recently added</h2>
-			<ul class="plain list-terms">
+			{#if msg}<span class="small muted">{msg}</span>{/if}
+		</form>
+		<div style="display:flex;flex-direction:column;gap:var(--space-3);padding-top:var(--space-2)">
+			<h6 style="margin:0">Recently added</h6>
+			<div>
 				{#each data.recent as t (t.slug)}
-					<li><a class="name" href="/terms/{encodeURIComponent(t.slug)}"><Rendered html={t.termHtml} inline /></a>{#if !t.defined}<span class="badge todo">to define</span>{/if}<span class="right small muted">{t.added ?? ''}</span></li>
-				{/each}
-			</ul>
-			<h3 style="margin-top:1.2rem">Tags</h3>
-			<div class="tagcloud">
-				{#each data.tags as [tag, n] (tag)}
-					<a class="tag" href="/terms?tag={encodeURIComponent(tag)}">{tag}<b>{n}</b></a>
+					<div class="recent-row">
+						<a href="/terms/{encodeURIComponent(t.slug)}"><Rendered html={t.termHtml} inline /></a>
+						{#if !t.defined}<span class="tag tag-outline">To define</span>{/if}
+						<span class="date">{t.added ?? ''}</span>
+					</div>
+				{:else}
+					<p class="small muted" style="margin:0">Nothing yet. Capture a term on the left.</p>
 				{/each}
 			</div>
-		</section>
-	</div>
+		</div>
+	</section>
 </main>

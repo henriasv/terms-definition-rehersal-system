@@ -2,7 +2,6 @@
 	import { page } from '$app/state';
 	import { api } from '$lib/client/api';
 	import Rendered from '$lib/components/Rendered.svelte';
-	import Tags from '$lib/components/Tags.svelte';
 	import type { TermDecorated } from '$lib/server/http';
 
 	interface Card {
@@ -125,78 +124,71 @@
 
 <svelte:head><title>Review</title></svelte:head>
 <svelte:window onkeydown={onKey} />
-<main>
+<main class="review">
 	{#if phase === 'setup'}
-		<div class="panel" style="max-width:560px;margin:2rem auto">
-			<h1>Review</h1>
-			<label class="field">Limit to tag
-				<select bind:value={tag}>
-					<option value="">All terms</option>
-					{#each data.tags as [t, n] (t)}<option value={t}>{t} ({n})</option>{/each}
-				</select>
-			</label>
-			<p class="small muted">Space reveals the answer, 1–4 rates it (Again, Hard, Good, Easy); Space again means Good; U takes back the last rating.</p>
-			{#if err}<div class="banner err">{err}</div>{/if}
-			<button class="btn primary" onclick={start}>Start</button>
+		<h2 style="margin:0">Review</h2>
+		<div class="field" style="max-width:360px">
+			<span class="label">Limit to tag</span>
+			<select bind:value={tag}>
+				<option value="">All terms</option>
+				{#each data.tags as [t, n] (t)}<option value={t}>{t} ({n})</option>{/each}
+			</select>
 		</div>
+		<p class="small muted" style="margin:0">Space reveals the answer, 1–4 rates it (Again, Hard, Good, Easy); Space again means Good; U takes back the last rating.</p>
+		{#if err}<div class="banner err">{err}</div>{/if}
+		<div><button class="btn primary" onclick={start}>Start review <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button></div>
 	{:else if phase === 'running' && card}
-		<div class="progress"><div style="width:{(idx / queue.length) * 100}%"></div></div>
-		<p class="small muted" style="text-align:center;margin:0 0 1rem">
-			{remaining} left · {counts.due} due · {counts.new} new{#if counts.newTotal > counts.new} (of {counts.newTotal} unseen){/if}
-			{#if tag}· tag {tag}{/if}
-			{#if last}· <button class="linkish" onclick={undo} disabled={busy}>undo last rating <kbd>u</kbd></button>{/if}
-		</p>
-		<div class="card">
-			{#if card.dir === 'fwd'}
-				<div class="front"><Rendered html={card.term.termHtml} inline /></div>
-				{#if card.term.aliasesHtml.length}<p class="aliases">{#each card.term.aliasesHtml as a, i (i)}{#if i}<span class="sep">·</span>{/if}<Rendered html={a} inline />{/each}</p>{/if}
-				<div class="row" style="justify-content:center;margin-top:0.5rem">{#if card.isNew}<span class="badge new">new</span>{/if}<Tags tags={card.term.tags} /></div>
-			{:else}
-				<p class="small muted" style="text-align:center;margin:0 0 0.5rem">Which term is this? {#if card.isNew}<span class="badge new">new</span>{/if}</p>
-				<div class="front def"><Rendered html={card.definitionHtml} /></div>
-			{/if}
-
-			{#if revealed}
-				<div class="back">
-					{#if card.dir === 'fwd'}
-						<Rendered html={card.definitionHtml} />
-					{:else}
-						<div class="answer-term"><Rendered html={card.term.termHtml} inline /></div>
-						{#if card.term.aliasesHtml.length}<p class="aliases">{#each card.term.aliasesHtml as a, i (i)}{#if i}<span class="sep">·</span>{/if}<Rendered html={a} inline />{/each}</p>{/if}
-						<div class="row" style="justify-content:center"><Tags tags={card.term.tags} /></div>
-					{/if}
-					{#if card.notesHtml.trim()}
-						<details class="note" style="margin-top:1rem">
-							<summary>Notes · <a href="/terms/{encodeURIComponent(card.slug)}">open term</a></summary>
-							<div style="margin-top:0.6rem"><Rendered html={card.notesHtml} /></div>
-						</details>
-					{:else}
-						<p class="small muted" style="margin-top:1rem"><a href="/terms/{encodeURIComponent(card.slug)}">Open term</a></p>
-					{/if}
-				</div>
-				<div class="rate">
-					<button class="btn r1" onclick={() => rate(1)} disabled={busy}><span>Again <kbd>1</kbd></span><span class="when">{when(card.intervals[1])}</span></button>
-					<button class="btn r2" onclick={() => rate(2)} disabled={busy}><span>Hard <kbd>2</kbd></span><span class="when">{when(card.intervals[2])}</span></button>
-					<button class="btn r3" onclick={() => rate(3)} disabled={busy}><span>Good <kbd>3</kbd></span><span class="when">{when(card.intervals[3])}</span></button>
-					<button class="btn r4" onclick={() => rate(4)} disabled={busy}><span>Easy <kbd>4</kbd></span><span class="when">{when(card.intervals[4])}</span></button>
-				</div>
-			{:else}
-				<div class="rate"><button class="btn primary" onclick={() => (revealed = true)}>Show answer <kbd>space</kbd></button></div>
-			{/if}
+		<div class="review-status">
+			<span>{remaining} left · {counts.due} due · {counts.new} new{#if counts.newTotal > counts.new} (of {counts.newTotal} unseen){/if}{#if tag} · tag {tag}{/if}</span>
+			{#if last}<button class="linkish" onclick={undo} disabled={busy}>undo last rating <kbd>u</kbd></button>{/if}
 		</div>
-		{#if err}<div class="banner err" style="max-width:760px;margin:1rem auto">{err}</div>{/if}
-	{:else}
-		<div class="panel" style="max-width:560px;margin:2rem auto;text-align:center">
-			<h1>Done</h1>
-			{#if done.total === 0}
-				<p class="muted">Nothing due{#if tag} for tag {tag}{/if}. Add definitions to bring more terms into rotation.</p>
+		<article class="card">
+			<div class="row">{#if card.isNew}<span class="tag tag-outline">New</span>{/if}{#each card.term.tags as g, i (`${i}:${g}`)}<span class="tag tag-neutral">{g}</span>{/each}</div>
+			{#if card.dir === 'fwd'}
+				<h1 class="term"><Rendered html={card.term.termHtml} inline /></h1>
+				{#if card.term.aliasesHtml.length}<div class="aliases">{#each card.term.aliasesHtml as a, i (i)}{#if i}<span class="sep">·</span>{/if}<Rendered html={a} inline />{/each}</div>{/if}
 			{:else}
-				<p>{done.total} reviews, {done.again} marked Again.</p>
+				<span class="kicker">Which term is this?</span>
+				<div class="prompt"><Rendered html={card.definitionHtml} /></div>
 			{/if}
-			<div class="row" style="justify-content:center">
-				{#if last}<button class="btn" onclick={undo} disabled={busy}>Undo last rating <kbd>u</kbd></button>{/if}
-				<button class="btn" onclick={() => (phase = 'setup')}>Back</button><a class="btn primary" href="/">Home</a>
+			<div class="hr" style="margin:var(--space-2) 0"></div>
+			{#if revealed}
+				{#if card.dir === 'fwd'}
+					<div class="prompt"><Rendered html={card.definitionHtml} /></div>
+				{:else}
+					<h1 class="term"><Rendered html={card.term.termHtml} inline /></h1>
+					{#if card.term.aliasesHtml.length}<div class="aliases">{#each card.term.aliasesHtml as a, i (i)}{#if i}<span class="sep">·</span>{/if}<Rendered html={a} inline />{/each}</div>{/if}
+				{/if}
+				<div class="links">
+					{#if card.notesHtml.trim()}
+						<details class="note"><summary>Notes</summary><div style="margin-top:var(--space-2)"><Rendered html={card.notesHtml} /></div></details>
+						<span style="color:var(--color-neutral-400)">·</span>
+					{/if}
+					<a href="/terms/{encodeURIComponent(card.slug)}">open term</a>
+				</div>
+			{:else}
+				<div><button class="btn secondary" onclick={() => (revealed = true)}>Show {card.dir === 'fwd' ? 'definition' : 'term'} <kbd>space</kbd></button></div>
+			{/if}
+		</article>
+		{#if revealed}
+			<div class="rate">
+				<button class="btn secondary" onclick={() => rate(1)} disabled={busy}><span>Again <kbd>1</kbd></span><span class="when">{when(card.intervals[1])}</span></button>
+				<button class="btn secondary" onclick={() => rate(2)} disabled={busy}><span>Hard <kbd>2</kbd></span><span class="when">{when(card.intervals[2])}</span></button>
+				<button class="btn secondary" onclick={() => rate(3)} disabled={busy}><span>Good <kbd>3</kbd></span><span class="when">{when(card.intervals[3])}</span></button>
+				<button class="btn secondary" onclick={() => rate(4)} disabled={busy}><span>Easy <kbd>4</kbd></span><span class="when">{when(card.intervals[4])}</span></button>
 			</div>
+		{/if}
+		{#if err}<div class="banner err">{err}</div>{/if}
+	{:else}
+		<h2 style="margin:0">Done</h2>
+		{#if done.total === 0}
+			<p class="muted" style="margin:0">Nothing due{#if tag} for tag {tag}{/if}. Define more terms to bring them into rotation.</p>
+		{:else}
+			<p style="margin:0">{done.total} reviews, {done.again} marked Again.</p>
+		{/if}
+		<div class="row">
+			{#if last}<button class="btn secondary" onclick={undo} disabled={busy}>Undo last rating <kbd>u</kbd></button>{/if}
+			<button class="btn secondary" onclick={() => (phase = 'setup')}>Back</button><a class="btn primary" href="/">Home</a>
 		</div>
 	{/if}
 </main>

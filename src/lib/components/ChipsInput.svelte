@@ -45,11 +45,13 @@
 </div>
 
 <style>
-	.chips { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; padding: 0.3rem 0.4rem; border: 1px solid var(--line); border-radius: 7px; background: var(--card); cursor: text; min-height: 2.4rem; }
-	.chips:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
-	.chip { display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.85rem; padding: 0.1rem 0.3rem 0.1rem 0.55rem; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); }
-	.mono .chip { font-family: var(--mono); }
-	.chip button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0.2rem; }
-	.chip button:hover { color: var(--err); }
-	input { flex: 1; min-width: 8rem; border: 0; outline: 0; background: transparent; padding: 0.2rem; font: inherit; color: var(--fg); }
+	.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 36px; padding: 5px 8px; border: 1px solid var(--color-divider); border-radius: var(--radius-md); background: transparent; cursor: text; }
+	.chips:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+	.chips:focus-within { border-color: var(--color-accent); }
+	.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: calc(var(--radius-md) * 0.75); background: var(--color-neutral-100); color: var(--color-neutral-800); }
+	.mono .chip { font-family: var(--font-mono); }
+	.chip button { border: 0; background: none; color: var(--color-neutral-600); cursor: pointer; font-size: 13px; line-height: 1; padding: 0; }
+	.chip button:hover { color: var(--color-accent); }
+	input { flex: 1; min-width: 7rem; min-height: 0; border: 0; outline: 0; background: transparent; padding: 2px; font: inherit; font-size: 14px; color: var(--color-text); caret-color: var(--color-accent); }
+	input::placeholder { color: var(--color-neutral-500); font-size: 13px; }
 </style>

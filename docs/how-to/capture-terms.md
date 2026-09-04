@@ -18,7 +18,7 @@ pnpm terms add "point of zero charge" -t chemistry/surface --typst --def "The pH
 
 ## Metadata
 
-Name, aliases, tags, math dialect, source and the reverse-card switch are edited in the form at the top of the term page, not in the file text. The frontmatter is written for you; fields you add by hand in the file are preserved.
+Name, aliases, tags, math dialect, source and the reverse-card switch are edited in the rail on the left of the term page, not in the file text. The frontmatter is written for you; fields you add by hand in the file are preserved.
 
 ## By hand
 
@@ -30,4 +30,4 @@ Type `[[` in the editor and a completion list offers every term name and alias; 
 
 ## Later: the definition
 
-`pnpm terms todo` lists undefined terms; so does the dashboard. Undefined terms never appear in review, so a half-captured backlog costs nothing.
+The **Define** page works through undefined terms one at a time, oldest first, with **Save and next** and **Skip for now**; the badge in the header is the count. `pnpm terms todo` lists the same set. Undefined terms never appear in review, so a half-captured backlog costs nothing.

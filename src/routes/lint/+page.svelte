@@ -27,23 +27,26 @@
 
 <svelte:head><title>Lint</title></svelte:head>
 <main>
-	<h1>Lint <span class="muted small">{n('error')} errors · {n('warn')} warnings · {n('info')} notes</span></h1>
-	<p class="muted small">Math dialect mismatches, render errors from KaTeX and typst, broken links, missing and orphaned assets. Same output as <code>pnpm terms lint</code>.</p>
+	<h2 style="margin:0">Lint <span class="count" style="font-size:18px;color:var(--color-neutral-600);font-weight:400;font-variant-numeric:tabular-nums">{n('error')} errors · {n('warn')} warnings · {n('info')} notes</span></h2>
+	<p class="text-muted" style="font-size:13px;max-width:70ch;margin:0">Math dialect mismatches, render errors from KaTeX and typst, broken links, missing and orphaned assets. Same output as <code>pnpm terms lint</code>.</p>
 	{#if data.issues.length === 0}
-		<div class="panel">Clean.</div>
+		<div class="banner">Clean.</div>
 	{:else}
-		<table class="panel">
-			<thead><tr><th>Level</th><th>Term</th><th>Line</th><th>Message</th></tr></thead>
+		<table class="table">
+			<thead><tr><th style="width:80px">Level</th><th style="width:180px">Term</th><th style="width:60px;text-align:right">Line</th><th>Message</th></tr></thead>
 			<tbody>
 				{#each data.issues as i (i.slug + i.code + (i.line ?? '') + i.message)}
 					<tr>
-						<td><span class="badge {i.level}">{i.level}</span></td>
-						<td>{#if i.slug}<a href="/terms/{encodeURIComponent(i.slug)}">{i.slug}</a>{:else}<span class="muted">—</span>{/if}</td>
-						<td class="mono small">{i.line ?? ''}</td>
+						<td><span class="tag tag-level" style="color: var(--{i.level === 'error' ? 'err' : i.level === 'warn' ? 'warn' : 'info'})">{i.level}</span></td>
+						<td class="mono" style="font-size:13px">{#if i.slug}<a href="/terms/{encodeURIComponent(i.slug)}">{i.slug}</a>{:else}<span class="muted">—</span>{/if}</td>
+						<td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--color-neutral-600)">{i.line ?? ''}</td>
 						<td>
-							{i.message}{#if i.fix}<div class="small muted">{i.fix}</div>{/if}
-							{#if i.asset}<button class="btn danger small" style="margin-top:0.3rem" onclick={() => removeAsset(i.asset!)} disabled={busy === i.asset}>Delete file</button>{/if}
-							{#if i.code === 'broken-link' && i.target}<button class="btn small" style="margin-top:0.3rem" onclick={() => addTerm(i.target!)} disabled={busy === i.target}>Add term “{i.target}”</button>{/if}
+							<div>{i.message}</div>
+							<div class="hint">
+								{#if i.fix}<span>{i.fix}</span>{/if}
+								{#if i.asset}<button class="linkish" onclick={() => removeAsset(i.asset!)} disabled={busy === i.asset}>Delete file</button>{/if}
+								{#if i.code === 'broken-link' && i.target}<button class="linkish" onclick={() => addTerm(i.target!)} disabled={busy === i.target}>Add term “{i.target}”</button>{/if}
+							</div>
 						</td>
 					</tr>
 				{/each}

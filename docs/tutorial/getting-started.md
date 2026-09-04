@@ -29,7 +29,7 @@ The browser opens on the dashboard. The left panel is **Capture**: type one term
 
 ## 4. Define a term
 
-Click a term under **To define**. The panel at the top holds the metadata as form fields: name, aliases and tags as chips (Enter or comma adds one), the math dialect, a source, and whether to ask the reverse card. Names and aliases may contain `$math$` and `smiles:…` tokens, which render as formulas and structures. Below it, the left pane is a syntax-highlighted editor for the note body and the right pane a live preview. Write under `## Definition`, save with ⌘S. Math goes in `$…$` (inline) or `$$…$$` (display). Paste an image from the clipboard and it lands in `Assets/` with an embed link inserted at the cursor. Changing the name renames the file; review history follows.
+Click **Define** in the header (the badge counts terms without a definition). The queue shows one term at a time: the rail on the left holds aliases, tags as chips (Enter or comma adds one), the math dialect, a source and the reverse-card switch; the middle is a syntax-highlighted editor for the note body; the right is a live preview. Write under `## Definition` and press **Save and next** (⌘↵), or **Skip for now** to come back later. Any term can also be opened from the list: the term page is the same workbench with the name editable, ⌘S to save. Names and aliases may contain `$math$` and `smiles:…` tokens. Math goes in `$…$` (inline) or `$$…$$` (display). Paste an image from the clipboard and it lands in `Assets/` with an embed link inserted at the cursor. Changing the name renames the file; review history follows.
 
 ## 5. Review
 

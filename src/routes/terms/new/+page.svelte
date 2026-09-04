@@ -22,17 +22,21 @@
 </script>
 
 <svelte:head><title>New term</title></svelte:head>
-<main style="max-width:720px">
-	<h1>New term</h1>
-	<form class="panel grid" style="gap:0.8rem" onsubmit={submit}>
-		<label class="field">Term <input type="text" bind:value={term} required placeholder="name; $math$ and smiles:… allowed" /></label>
-		<label class="field">Aliases <ChipsInput bind:values={aliases} placeholder="other names; smiles:… draws a structure" /></label>
-		<label class="field">Tags <ChipsInput bind:values={tags} suggestions={data.allTags} placeholder="chemistry/surface" /></label>
-		<label class="field">Math dialect for $…$
-			<select bind:value={math}><option value="latex">LaTeX (KaTeX)</option><option value="typst">typst</option></select>
-		</label>
-		<label class="field">Definition (optional, Markdown) <textarea rows="5" bind:value={definition}></textarea></label>
+<main class="narrow">
+	<h2 style="margin:0">New term</h2>
+	<form style="display:flex;flex-direction:column;gap:var(--space-4);max-width:560px" onsubmit={submit}>
+		<div class="field"><span class="label">Term</span><input type="text" bind:value={term} required placeholder="name; $math$ and smiles:… allowed" /></div>
+		<div class="field"><span class="label">Aliases</span><ChipsInput bind:values={aliases} placeholder="other names, smiles:…" /></div>
+		<div class="field"><span class="label">Tags</span><ChipsInput bind:values={tags} suggestions={data.allTags} placeholder="chemistry/surface" /></div>
+		<div class="field">
+			<span class="label">Math dialect for $…$</span>
+			<div class="seg">
+				<label class="seg-opt"><input type="radio" name="math" value="latex" bind:group={math} />LaTeX (KaTeX)</label>
+				<label class="seg-opt"><input type="radio" name="math" value="typst" bind:group={math} />Typst</label>
+			</div>
+		</div>
+		<div class="field"><span class="label">Definition (optional, Markdown)</span><textarea rows="5" bind:value={definition}></textarea></div>
 		{#if err}<div class="banner err">{err}</div>{/if}
-		<div class="row"><button class="btn primary" type="submit">Create</button><a class="btn" href="/terms">Cancel</a></div>
+		<div class="row"><button class="btn primary" type="submit">Create</button><a class="btn secondary" href="/terms">Cancel</a></div>
 	</form>
 </main>

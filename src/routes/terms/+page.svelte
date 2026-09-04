@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Rendered from '$lib/components/Rendered.svelte';
-	import Tags from '$lib/components/Tags.svelte';
 	let { data } = $props();
 	let q = $state('');
 	const tag = $derived(page.url.searchParams.get('tag') ?? '');
@@ -18,28 +17,33 @@
 
 <svelte:head><title>Terms · all</title></svelte:head>
 <main class="fill">
-	<div class="row" style="margin-bottom:1rem">
-		<h1 style="margin:0">Terms <span class="muted small">{shown.length}/{data.terms.length}</span></h1>
-		<input class="right" type="search" placeholder="Search name or alias" bind:value={q} style="min-width:16rem" />
-		<a class="btn primary" href="/terms/new">New term</a>
+	<div class="page-title">
+		<h2>Terms <span class="count">{shown.length}/{data.terms.length}</span></h2>
+		<div class="search">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+			<input type="search" placeholder="Search name or alias" bind:value={q} />
+		</div>
+		<a class="btn primary right" href="/terms/new">New term</a>
 	</div>
-	<div class="row" style="margin-bottom:1rem">
-		<a class="tag" href="/terms" aria-current={!tag ? 'page' : undefined} style={!tag ? 'border-color:var(--fg);color:var(--fg)' : ''}>all</a>
+	<div class="tagrow">
+		<a class="tag" class:tag-outline={!tag} class:tag-neutral={!!tag} href="/terms">all</a>
 		{#each data.tags as [t, n] (t)}
-			<a class="tag" href="/terms?tag={encodeURIComponent(t)}" style={tag === t ? 'border-color:var(--fg);color:var(--fg)' : ''}>{t} <b>{n}</b></a>
+			<a class="tag" class:tag-outline={tag === t} class:tag-neutral={tag !== t} href="/terms?tag={encodeURIComponent(t)}">{t} <span class="n">{n}</span></a>
 		{/each}
 	</div>
-	<ul class="plain list-terms panel grow scrollable">
+	<div class="rows grow scrollable">
 		{#each shown as t (t.slug)}
-			<li>
-				<a class="name" href="/terms/{encodeURIComponent(t.slug)}"><Rendered html={t.termHtml} inline /></a>
-				{#if t.aliasesHtml.length}<span class="muted small aliases-line">{#each t.aliasesHtml as a, i (i)}<Rendered html={a} inline />{/each}</span>{/if}
-				{#if !t.defined}<span class="badge todo">to define</span>{/if}
-				{#if t.math === 'typst'}<span class="badge typst">typst</span>{/if}
-				<span class="right row small"><Tags tags={t.tags} /></span>
-			</li>
+			<a class="term-row" href="/terms/{encodeURIComponent(t.slug)}">
+				<span class="name"><Rendered html={t.termHtml} inline /></span>
+				<span class="meta">
+					{#if t.aliasesHtml.length}<span class="aliases-line">{#each t.aliasesHtml as a, i (i)}<Rendered html={a} inline />{/each}</span>{/if}
+					{#if !t.defined}<span class="tag tag-outline">To define</span>{/if}
+					{#if t.math === 'typst'}<span class="tag tag-accent">Typst</span>{/if}
+				</span>
+				<span class="tags">{#each t.tags as g, i (`${i}:${g}`)}<span class="tag tag-neutral">{g}</span>{/each}</span>
+			</a>
 		{:else}
-			<li class="muted">No terms match.</li>
+			<p class="small muted" style="padding:var(--space-3) var(--space-2)">No terms match.</p>
 		{/each}
-	</ul>
+	</div>
 </main>

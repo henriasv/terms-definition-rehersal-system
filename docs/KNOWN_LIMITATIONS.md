@@ -2,6 +2,7 @@
 
 - **Single machine, single user.** No auth, binds to localhost. Sync between machines is git, done by you.
 - **No phone surface yet.** Capture and review are desktop only. A Telegram agent could call the same server functions.
+- **Light theme only.** The design system defines no dark palette; the app follows it.
 - **Typst needs the CLI.** Without `typst` on `PATH`, typst snippets show an error instead of rendering. LaTeX needs nothing.
 - **Inline typst alignment is approximate for tall content.** Snippets taller than 1.5 em above the baseline sit slightly high.
 - **Optimiser needs data.** `terms optimize` wants a few hundred reviews before the fitted weights beat the defaults.

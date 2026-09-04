@@ -34,24 +34,31 @@
 	export function focus() {
 		view?.focus();
 	}
+	/** Put the cursor at a document offset (clamped) and focus. */
+	export function focusAt(pos: number) {
+		if (!view) return;
+		const p = Math.max(0, Math.min(pos, view.state.doc.length));
+		view.dispatch({ selection: { anchor: p }, scrollIntoView: true });
+		view.focus();
+	}
 
 	const mathTag = Tag.define();
 	const wikiTag = Tag.define();
 	const highlight = HighlightStyle.define([
-		{ tag: t.heading, fontWeight: '700', color: 'var(--accent)' },
+		{ tag: t.heading, fontWeight: '600', color: 'var(--color-accent-700)' },
 		{ tag: t.emphasis, fontStyle: 'italic' },
 		{ tag: t.strong, fontWeight: '700' },
 		{ tag: t.strikethrough, textDecoration: 'line-through' },
 		{ tag: t.link, color: 'var(--accent)', textDecoration: 'underline' },
 		{ tag: t.url, color: 'var(--accent)' },
-		{ tag: t.monospace, background: 'var(--soft)', borderRadius: '3px' },
+		{ tag: t.monospace, background: 'color-mix(in srgb, var(--color-text) 6%, transparent)', borderRadius: '2px' },
 		{ tag: t.processingInstruction, color: 'var(--muted)' },
-		{ tag: t.labelName, color: 'var(--ok)', fontWeight: '600' },
+		{ tag: t.labelName, color: 'var(--color-neutral-700)', fontWeight: '600' },
 		{ tag: t.quote, color: 'var(--muted)', fontStyle: 'italic' },
 		{ tag: t.contentSeparator, color: 'var(--muted)' },
 		{ tag: t.list, color: 'var(--muted)' },
 		{ tag: t.escape, color: 'var(--muted)' },
-		{ tag: mathTag, color: 'var(--math)' },
+		{ tag: mathTag, color: 'var(--color-accent-600)' },
 		{ tag: wikiTag, color: 'var(--accent)' }
 	]);
 
@@ -120,17 +127,18 @@
 	function theme(dark: boolean): Extension {
 		return EditorView.theme(
 			{
-				'&': { fontSize: '0.92rem', height: '100%', background: 'var(--card)', color: 'var(--fg)', borderRadius: '10px', border: '1px solid var(--line)' },
-				'&.cm-focused': { outline: '2px solid var(--accent)', outlineOffset: '1px' },
-				'.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.55', padding: '0.5rem 0' },
-				'.cm-content': { padding: '0.4rem 0.8rem', caretColor: 'var(--fg)' },
-				'.cm-line': { padding: '0 0.2rem' },
-				'.cm-activeLine': { background: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
-				'.cm-cursor': { borderLeftColor: 'var(--fg)' },
-				'&.cm-focused .cm-selectionBackground, .cm-selectionBackground': { background: 'color-mix(in srgb, var(--accent) 25%, transparent)' },
-				'.cm-placeholder': { color: 'var(--muted)' },
-				'.cm-tooltip': { background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '8px', color: 'var(--fg)' },
-				'.cm-tooltip-autocomplete ul li[aria-selected]': { background: 'var(--accent)', color: 'var(--accent-fg)' }
+				'&': { fontSize: '13px', height: '100%', background: 'transparent', color: 'var(--color-text)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-divider)' },
+				'&:hover': { borderColor: 'color-mix(in srgb, var(--color-text) 45%, transparent)' },
+				'&.cm-focused': { borderColor: 'var(--color-accent)' },
+				'.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.6', padding: '6px 0' },
+				'.cm-content': { padding: '4px 10px', caretColor: 'var(--color-accent)' },
+				'.cm-line': { padding: '0 2px' },
+				'.cm-activeLine': { background: 'color-mix(in srgb, var(--color-text) 4%, transparent)' },
+				'.cm-cursor': { borderLeftColor: 'var(--color-accent)' },
+				'&.cm-focused .cm-selectionBackground, .cm-selectionBackground': { background: 'color-mix(in srgb, var(--color-accent) 30%, transparent)' },
+				'.cm-placeholder': { color: 'var(--color-neutral-500)' },
+				'.cm-tooltip': { background: 'var(--color-bg)', border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)', boxShadow: 'var(--shadow-md)' },
+				'.cm-tooltip-autocomplete ul li[aria-selected]': { background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)', color: 'var(--color-accent-800)' }
 			},
 			{ dark }
 		);
@@ -196,7 +204,7 @@
 <div bind:this={host} class="cm-host" data-placeholder={placeholder}></div>
 
 <style>
-	.cm-host { height: 100%; min-height: 0; }
+	.cm-host { height: 100%; min-height: 0; flex: 1 1 auto; }
 	.cm-host :global(.cm-editor) { height: 100%; }
 	.cm-host :global(.cm-scroller) { overflow: auto; }
 </style>

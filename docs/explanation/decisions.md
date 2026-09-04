@@ -18,4 +18,8 @@ Recorded from the design conversation (September 2026) so later changes can be j
 
 **Structures are names, not a field.** A SMILES is written as `smiles:…` inside the name or an alias, alongside `$math$`. It is then shown wherever the name is shown, and a term needs no extra field to be a molecule.
 
+**Look: the Classical system.** The visual design comes from a Claude Design project (September 2026): Cormorant Garamond headings over Lora body, a warm near-white ground, one gold accent applied as stroke (outlined buttons, hairline rules), no dark theme. Tokens live at the top of `src/app.css`; the design sources under `design/` predate it and are kept as a record.
+
+**Define is a queue, not a list.** Undefined terms are worked through one at a time with save-and-next, so capturing ten terms in a lecture and defining them that evening is a linear pass rather than ten page visits.
+
 **Links, no graph.** `[[wikilinks]]` resolve by slug, name or alias, and Obsidian will draw a graph if wanted. The app itself does not build one.

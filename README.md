@@ -2,6 +2,8 @@
 
 Capture the terms you keep stumbling over in a new field, one Markdown file each, and rehearse them as spaced-repetition flashcards. Math in LaTeX or typst, molecules as SMILES, images pasted straight into the note.
 
+The look is the "Classical" system from a Claude Design project: serif type, hairline rules, a single gold accent.
+
 Two parts share one folder on disk:
 
 - **The vault** — a git repo you own: `Terms/*.md`, `Assets/`, `reviews.jsonl`. Plain files; also opens as an Obsidian vault.
