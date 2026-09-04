@@ -4,6 +4,15 @@
 	let { data } = $props();
 	const n = (level: string) => data.issues.filter((i) => i.level === level).length;
 	let busy = $state('');
+	async function addTerm(name: string) {
+		busy = name;
+		try {
+			await api('/api/terms', { method: 'POST', json: { term: name } });
+			await invalidateAll();
+		} finally {
+			busy = '';
+		}
+	}
 	async function removeAsset(name: string) {
 		if (!confirm(`Delete Assets/${name}? This cannot be undone.`)) return;
 		busy = name;
@@ -34,6 +43,7 @@
 						<td>
 							{i.message}{#if i.fix}<div class="small muted">{i.fix}</div>{/if}
 							{#if i.asset}<button class="btn danger small" style="margin-top:0.3rem" onclick={() => removeAsset(i.asset!)} disabled={busy === i.asset}>Delete file</button>{/if}
+							{#if i.code === 'broken-link' && i.target}<button class="btn small" style="margin-top:0.3rem" onclick={() => addTerm(i.target!)} disabled={busy === i.target}>Add term “{i.target}”</button>{/if}
 						</td>
 					</tr>
 				{/each}

@@ -26,7 +26,7 @@ Create `Terms/<slug>.md` in any editor. The only required frontmatter field is `
 
 ## Linking terms
 
-Type `[[` in the editor and a completion list offers every term name and alias; accepting one closes the link. Renaming a term repoints links that used its old name or slug in other notes; links through an alias keep working as they are.
+Type `[[` in the editor and a completion list offers every term name and alias; accepting one closes the link. A link to a term that does not exist yet is flagged above the editor as you type, with an **Add term** button: one click creates the term with the current term's tags and puts it under *To define*, and the link turns live. The same button appears on the Lint page. Renaming a term repoints links that used its old name or slug in other notes; links through an alias keep working as they are.
 
 ## Later: the definition
 

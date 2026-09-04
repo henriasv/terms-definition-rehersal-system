@@ -10,7 +10,7 @@ All routes are local, unauthenticated, JSON unless noted. Errors: `{ "error": "�
 | `PUT /api/terms/:slug` | `{ raw }` (whole file) **or** `{ term?, aliases?, tags?, math?, reverse?, source?, body? }` (`body` = Markdown after the H1) | same as GET plus `renamed`; a changed name moves the file and the response carries the new slug |
 | `PATCH /api/terms/:slug` | `{ rename }` | `{ term: Summary }` |
 | `DELETE /api/terms/:slug` | | `{ ok }` |
-| `POST /api/render` | `{ body, math, term?, aliases? }` | `{ html, errors, defined, termHtml, aliasesHtml }` — preview, writes nothing |
+| `POST /api/render` | `{ body, math, term?, aliases?, tags?, slug? }` | `{ html, errors, defined, termHtml, aliasesHtml, issues }` — preview plus the live lint checks (dialect mismatch, broken links, missing assets); writes nothing |
 | `POST /api/assets` | multipart `file`, `slug` | `{ name, url, markdown, reused }` 201 |
 | `GET /assets/:name` | | the file |
 | `GET /api/review/queue?tag=` | | `{ cards[], counts: {due, new, newTotal}, lookaheadMinutes }` |

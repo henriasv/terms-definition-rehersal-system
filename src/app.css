@@ -146,7 +146,7 @@ label.check { display: flex; align-items: center; gap: 0.45rem; font-size: 0.9re
 textarea.raw { width: 100%; min-height: 60vh; resize: vertical; line-height: 1.5; tab-size: 2; padding: 0.8rem; }
 .preview { padding: 1rem 1.2rem; overflow: auto; }
 .preview h1 { font-family: var(--serif); }
-.issues li { margin-bottom: 0.3rem; }
+.issues li { margin-bottom: 0.3rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .issues .fix { color: var(--muted); }
 
 /* Review cards */

@@ -17,6 +17,8 @@ export interface LintIssue {
 	fix?: string;
 	/** For asset issues: the file name under Assets/. */
 	asset?: string;
+	/** For broken links: the `[[target]]` as written, so a UI can offer to create it. */
+	target?: string;
 }
 
 export interface LintContext {
@@ -94,7 +96,7 @@ export function lintTerm(term: Term, ctx: LintContext): LintIssue[] {
 					issues.push({ slug: term.slug, level: 'warn', code: 'missing-asset', line: lineOf(idx + 1), message: `Embedded asset "${file}" not found in Assets/.` });
 				}
 			} else if (!resolveTermLink(target, ctx.terms)) {
-				issues.push({ slug: term.slug, level: 'warn', code: 'broken-link', line: lineOf(idx + 1), message: `[[${target.trim()}]] does not match any term, name or alias.`, fix: `terms add "${target.trim()}"` });
+				issues.push({ slug: term.slug, level: 'warn', code: 'broken-link', line: lineOf(idx + 1), target: target.trim(), message: `[[${target.trim()}]] does not match any term, name or alias.`, fix: `terms add "${target.trim()}"` });
 			}
 		}
 	});
@@ -108,6 +110,9 @@ export function orphanAssets(ctx: LintContext): string[] {
 	for (const t of ctx.terms) for (const m of t.body.matchAll(WIKILINK)) if (m[1]) used.add(m[2].trim());
 	return [...ctx.assets].filter((a) => !used.has(a) && !a.startsWith('.')).sort();
 }
+
+/** Codes worth showing while typing (the rest are about the file as a whole). */
+export const LIVE_CODES = new Set(['math-looks-typst', 'math-looks-latex', 'math-mixed', 'broken-link', 'missing-asset']);
 
 export function lintAll(ctx: LintContext): LintIssue[] {
 	const issues: LintIssue[] = [];

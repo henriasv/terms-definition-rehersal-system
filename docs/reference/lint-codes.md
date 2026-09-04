@@ -7,7 +7,7 @@
 | `math-mixed` | warn | One snippet shows both. |
 | `latex-error` | error | KaTeX failed to parse the snippet (message included). |
 | `typst-error` | error | typst CLI failed (message and line included). |
-| `broken-link` | warn | `[[target]]` matches no term, name or alias. |
+| `broken-link` | warn | `[[target]]` matches no term, name or alias. Shown live in the editor; the **Add term** button creates it. |
 | `missing-asset` | warn | `![[file]]` not present in `Assets/`. |
 | `orphan-asset` | info | A file in `Assets/` that no term embeds. The Lint page offers a delete button; `terms assets --prune` removes them all. |
 | `slug-mismatch` | warn | Filename does not equal `slugify(term)`. Everything still works (links by slug and log keys use the filename); `terms rename` normalises it. |

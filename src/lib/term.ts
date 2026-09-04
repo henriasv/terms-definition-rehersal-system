@@ -381,3 +381,12 @@ export function patchTermRaw(raw: string, patch: TermPatch): { raw: string; slug
 	const out = same && fmBlock.trim().startsWith('---') ? fmBlock + body : matter.stringify(body, data);
 	return { raw: out, slug };
 }
+
+/** A Term built from form values, for live preview and lint without touching disk. */
+export function synthesizeTerm(slug: string, fm: { term: string; aliases?: string[]; tags?: string[]; math?: MathDialect }, body: string): Term {
+	const data: Record<string, unknown> = { term: fm.term.trim() || slug };
+	if (fm.aliases?.length) data.aliases = fm.aliases;
+	if (fm.tags?.length) data.tags = fm.tags;
+	data.math = fm.math ?? 'latex';
+	return parseTerm(slug, matter.stringify(joinTitle(String(data.term), body), data));
+}

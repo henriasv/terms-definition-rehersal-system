@@ -36,6 +36,9 @@
 	let aliasesHtml = $state<string[]>(untrack(() => data.rendered.aliasesHtml));
 	let defined = $state(untrack(() => data.term.defined));
 	let issues: LintIssue[] = $state(untrack(() => data.issues));
+	/** Terms created from broken links this session; extend the editor's completion list without a reload. */
+	let addedTargets = $state<string[]>([]);
+	const completionTargets = $derived([...data.linkTargets, ...addedTargets]);
 	let previewErrors: { kind: string; message: string; line?: number }[] = $state([]);
 	let busy = $state(false);
 	let toast = $state('');
@@ -77,7 +80,7 @@
 	let mounted = false;
 	let previewSeq = 0;
 	$effect(() => {
-		const req = { body, math: meta.math, term: meta.term, aliases: [...meta.aliases] };
+		const req = { body, math: meta.math, term: meta.term, aliases: [...meta.aliases], tags: [...meta.tags], slug: loadedSlug };
 		if (!mounted) {
 			mounted = true;
 			return;
@@ -85,11 +88,14 @@
 		clearTimeout(timer);
 		timer = setTimeout(() => preview(req), 350);
 	});
-	async function preview(req: { body: string; math: 'latex' | 'typst'; term: string; aliases: string[] }) {
+	const LIVE = ['math-looks-typst', 'math-looks-latex', 'math-mixed', 'broken-link', 'missing-asset'];
+	async function preview(req: { body: string; math: 'latex' | 'typst'; term: string; aliases: string[]; tags: string[]; slug: string }) {
 		const seq = ++previewSeq;
 		try {
-			const r = await api<{ html: string; errors: typeof previewErrors; defined: boolean; termHtml: string; aliasesHtml: string[] }>('/api/render', { method: 'POST', json: req });
+			const r = await api<{ html: string; errors: typeof previewErrors; defined: boolean; termHtml: string; aliasesHtml: string[]; issues: LintIssue[] }>('/api/render', { method: 'POST', json: req });
 			if (seq !== previewSeq) return;
+			// Live checks replace the load-time ones of the same kind; file-level notes (undefined, untagged…) stay.
+			issues = [...issues.filter((i) => !LIVE.includes(i.code) && !i.code.endsWith('-error')), ...r.issues];
 			html = r.html;
 			termHtml = r.termHtml;
 			aliasesHtml = r.aliasesHtml;
@@ -137,6 +143,19 @@
 			} catch (e) {
 				say(`Upload failed: ${(e as Error).message}`);
 			}
+		}
+	}
+
+	/** Create the term a broken [[link]] points at, with this term's tags, and re-check the text. */
+	async function addLinked(target: string) {
+		try {
+			const r = await api<{ terms: { term: string; created: boolean }[] }>('/api/terms', { method: 'POST', json: { term: target, tags: meta.tags } });
+			const t = r.terms[0];
+			addedTargets = [...addedTargets, t.term];
+			say(t.created ? `Added “${t.term}” with this term's tags. It is waiting under To define.` : `“${t.term}” already exists.`);
+			preview({ body, math: meta.math, term: meta.term, aliases: [...meta.aliases], tags: [...meta.tags], slug: loadedSlug });
+		} catch (e) {
+			say(`Could not add: ${(e as Error).message}`);
 		}
 	}
 
@@ -195,7 +214,12 @@
 		<div class="banner issues">
 			<ul class="plain issues">
 				{#each issues as i (i.code + (i.line ?? '') + i.message)}
-					<li><span class="badge {i.level}">{i.level}</span> {#if i.line}<span class="mono small">line {i.line}</span>{/if} {i.message} {#if i.fix}<span class="fix small">{i.fix}</span>{/if}</li>
+					<li>
+						<span class="badge {i.level}">{i.level}</span> {#if i.line}<span class="mono small">line {i.line}</span>{/if} {i.message}
+						{#if i.code === 'broken-link' && i.target}
+							<button class="btn small" onclick={() => addLinked(i.target!)}>Add term “{i.target}”</button>
+						{:else if i.fix}<span class="fix small">{i.fix}</span>{/if}
+					</li>
 				{/each}
 				{#each previewErrors as e (e.message)}
 					<li><span class="badge error">preview</span> {e.kind}: {e.message.split('\n')[0]}</li>
@@ -205,7 +229,7 @@
 	{/if}
 
 	<div class="editor grow">
-		<CodeEditor bind:this={editor} bind:value={body} onsave={save} onfiles={upload} linkTargets={data.linkTargets} />
+		<CodeEditor bind:this={editor} bind:value={body} onsave={save} onfiles={upload} linkTargets={completionTargets} />
 		<div class="panel preview">
 			{#if aliasesHtml.length}
 				<p class="aliases-line small muted">{#each aliasesHtml as a, i (i)}<Rendered html={a} inline />{/each}</p>
