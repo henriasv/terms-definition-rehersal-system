@@ -2,10 +2,10 @@
 term: Salicylic acid
 aliases:
   - 2-hydroxybenzoic acid
+  - smiles:OC(=O)c1ccccc1O
 tags:
   - chemistry/organic
 math: latex
-smiles: OC(=O)c1ccccc1O
 added: '2026-09-04'
 ---
 

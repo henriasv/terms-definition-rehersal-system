@@ -4,17 +4,16 @@ One file per term: `Terms/<slug>.md`. YAML frontmatter, then Markdown. The canon
 
 ## Slug
 
-`slugify(term)`: lowercase, æ→ae ø→o å→a, strip diacritics, non-alphanumerics → `-`, trim. `Surface deprotonation constant` → `surface-deprotonation-constant`. The slug is the identifier in links, in the review log and in URLs; renaming a term changes it (see [CLI: rename](cli.md)).
+`slugify(term)`: strip `smiles:` tokens and math markup, lowercase, æ→ae ø→o å→a, strip diacritics, non-alphanumerics → `-`, trim. `Surface deprotonation constant` → `surface-deprotonation-constant`. The slug is the identifier in links, in the review log and in URLs; renaming a term changes it (see [CLI: rename](cli.md)).
 
 ## Frontmatter
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `term` | string | yes | Display name. Should slugify to the filename; lint reports `slug-mismatch` otherwise. |
-| `aliases` | list of strings | no | Alternative names; shown on cards, resolve in `[[links]]`. |
+| `term` | string | yes | Display name. May contain `$…$` math (file dialect) and `smiles:<SMILES>` tokens. Its plain text should slugify to the filename; lint reports `slug-mismatch` otherwise. |
+| `aliases` | list of strings | no | Alternative names, same syntax as `term`; shown on cards, resolve in `[[links]]`. |
 | `tags` | list of strings | no | Lowercase; nest with `/` (`chemistry/surface`). A leading `#` is stripped. |
 | `math` | `latex` \| `typst` | no | Dialect of `$…$` in this file. Default `latex`. |
-| `smiles` | string | no | Structure drawn on the card and term page. |
 | `reverse` | bool | no | `false` disables the definition → term card. Default `true`. |
 | `added` | ISO date | no | Set on creation. Orders new cards. |
 | `source` | string | no | Free text, e.g. a literature-vault citekey. |
@@ -54,10 +53,10 @@ Other `## Sections` are allowed and preserved. Section lookup is case-insensitiv
 term: Salicylic acid
 aliases:
   - 2-hydroxybenzoic acid
+  - smiles:OC(=O)c1ccccc1O
 tags:
   - chemistry/organic
 math: latex
-smiles: OC(=O)c1ccccc1O
 added: '2026-09-04'
 ---
 

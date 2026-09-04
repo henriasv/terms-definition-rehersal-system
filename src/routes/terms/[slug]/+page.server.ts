@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		term: summary(term),
 		body: splitTitle(term.body).rest,
-		rendered: { definition: rendered.definition, body: rendered.body },
+		rendered: { definition: rendered.definition, body: rendered.body, termHtml: rendered.termHtml, aliasesHtml: rendered.aliasesHtml },
 		issues,
 		cards: { fwd: due('fwd'), rev: due('rev') },
 		file: `${vaultPath()}/Terms/${term.slug}.md`,

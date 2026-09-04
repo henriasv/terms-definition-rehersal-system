@@ -16,4 +16,6 @@ Recorded from the design conversation (September 2026) so later changes can be j
 
 **Undefined terms are normal.** Capture speed was the stated priority, so a term with only a name is a complete, valid file that simply does not produce cards yet.
 
+**Structures are names, not a field.** A SMILES is written as `smiles:…` inside the name or an alias, alongside `$math$`. It is then shown wherever the name is shown, and a term needs no extra field to be a molecule.
+
 **Links, no graph.** `[[wikilinks]]` resolve by slug, name or alias, and Obsidian will draw a graph if wanted. The app itself does not build one.

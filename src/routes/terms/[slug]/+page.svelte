@@ -5,7 +5,6 @@
 	import ChipsInput from '$lib/components/ChipsInput.svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
 	import Rendered from '$lib/components/Rendered.svelte';
-	import Smiles from '$lib/components/Smiles.svelte';
 	import Tags from '$lib/components/Tags.svelte';
 	import type { LintIssue } from '$lib/lint';
 
@@ -16,7 +15,6 @@
 		aliases: string[];
 		tags: string[];
 		math: 'latex' | 'typst';
-		smiles: string;
 		reverse: boolean;
 		source: string;
 	}
@@ -25,7 +23,6 @@
 		aliases: [...data.term.aliases],
 		tags: [...data.term.tags],
 		math: data.term.math,
-		smiles: data.term.smiles ?? '',
 		reverse: data.term.reverse,
 		source: data.term.source ?? ''
 	});
@@ -35,6 +32,8 @@
 	let body = $state(untrack(() => data.body));
 	let savedKey = $state(untrack(() => snapshot(fromData(), data.body)));
 	let html = $state(untrack(() => data.rendered.body));
+	let termHtml = $state(untrack(() => data.rendered.termHtml));
+	let aliasesHtml = $state<string[]>(untrack(() => data.rendered.aliasesHtml));
 	let defined = $state(untrack(() => data.term.defined));
 	let issues: LintIssue[] = $state(untrack(() => data.issues));
 	let previewErrors: { kind: string; message: string; line?: number }[] = $state([]);
@@ -53,6 +52,8 @@
 			body = data.body;
 			savedKey = snapshot(fromData(), data.body);
 			html = data.rendered.body;
+			termHtml = data.rendered.termHtml;
+			aliasesHtml = data.rendered.aliasesHtml;
 			defined = data.term.defined;
 			issues = data.issues;
 			previewErrors = [];
@@ -64,19 +65,20 @@
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let mounted = false;
 	$effect(() => {
-		const b = body;
-		const m = meta.math;
+		const req = { body, math: meta.math, term: meta.term, aliases: [...meta.aliases] };
 		if (!mounted) {
 			mounted = true;
 			return;
 		}
 		clearTimeout(timer);
-		timer = setTimeout(() => preview(b, m), 350);
+		timer = setTimeout(() => preview(req), 350);
 	});
-	async function preview(b: string, m: 'latex' | 'typst') {
+	async function preview(req: { body: string; math: 'latex' | 'typst'; term: string; aliases: string[] }) {
 		try {
-			const r = await api<{ html: string; errors: typeof previewErrors; defined: boolean }>('/api/render', { method: 'POST', json: { body: b, math: m } });
+			const r = await api<{ html: string; errors: typeof previewErrors; defined: boolean; termHtml: string; aliasesHtml: string[] }>('/api/render', { method: 'POST', json: req });
 			html = r.html;
+			termHtml = r.termHtml;
+			aliasesHtml = r.aliasesHtml;
 			previewErrors = r.errors;
 			defined = r.defined;
 		} catch (e) {
@@ -130,18 +132,18 @@
 		}
 	}
 	async function remove() {
-		if (!confirm(`Delete "${meta.term}"? The file is removed; review history stays in the log.`)) return;
+		if (!confirm(`Delete "${data.term.plain}"? The file is removed; review history stays in the log.`)) return;
 		await api(`/api/terms/${loadedSlug}`, { method: 'DELETE' });
 		await goto('/terms', { invalidateAll: true });
 	}
 	const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : 'never reviewed');
 </script>
 
-<svelte:head><title>{meta.term}</title></svelte:head>
+<svelte:head><title>{data.term.plain}</title></svelte:head>
 <svelte:window onkeydown={onKey} />
-<main class="wide">
+<main class="wide fill">
 	<div class="row" style="margin-bottom:0.8rem">
-		<h1 style="margin:0">{meta.term}</h1>
+		<h1 style="margin:0"><Rendered html={termHtml} inline /></h1>
 		{#if !defined}<span class="badge todo">to define</span>{/if}
 		{#if meta.math === 'typst'}<span class="badge typst">typst</span>{/if}
 		{#if dirty}<span class="badge warn">unsaved</span>{/if}
@@ -155,7 +157,7 @@
 			<input type="text" bind:value={meta.term} />
 		</label>
 		<label class="field">Aliases
-			<ChipsInput bind:values={meta.aliases} placeholder="other names, Enter to add" />
+			<ChipsInput bind:values={meta.aliases} placeholder="other names; smiles:… draws a structure" />
 		</label>
 		<label class="field">Tags
 			<ChipsInput bind:values={meta.tags} suggestions={data.allTags} placeholder="chemistry/surface" />
@@ -163,18 +165,18 @@
 		<label class="field">Math dialect for $…$
 			<select bind:value={meta.math}><option value="latex">LaTeX (KaTeX)</option><option value="typst">typst</option></select>
 		</label>
-		<label class="field">SMILES
-			<input type="text" class="mono" bind:value={meta.smiles} placeholder="OC(=O)c1ccccc1" spellcheck="false" />
-		</label>
 		<label class="field">Source
 			<input type="text" bind:value={meta.source} placeholder="citekey, DOI or URL" />
 		</label>
-		<label class="check"><input type="checkbox" bind:checked={meta.reverse} /> Also ask definition → term</label>
-		<div class="small muted">Added {data.term.added ?? '?'} · <span class="mono">{data.file}</span></div>
+		<div class="foot small muted">
+			<label class="check"><input type="checkbox" bind:checked={meta.reverse} /> Also ask definition → term</label>
+			<span>Added {data.term.added ?? '?'}</span>
+			<span class="mono" title="File on disk">{data.file}</span>
+		</div>
 	</section>
 
 	{#if issues.length || previewErrors.length}
-		<div class="banner">
+		<div class="banner issues">
 			<ul class="plain issues">
 				{#each issues as i (i.code + (i.line ?? '') + i.message)}
 					<li><span class="badge {i.level}">{i.level}</span> {#if i.line}<span class="mono small">line {i.line}</span>{/if} {i.message} {#if i.fix}<span class="fix small">{i.fix}</span>{/if}</li>
@@ -186,10 +188,12 @@
 		</div>
 	{/if}
 
-	<div class="editor">
+	<div class="editor grow">
 		<CodeEditor bind:this={editor} bind:value={body} onsave={save} onfiles={upload} />
 		<div class="panel preview">
-			{#if meta.smiles.trim()}<Smiles smiles={meta.smiles.trim()} />{/if}
+			{#if aliasesHtml.length}
+				<p class="aliases-line small muted">{#each aliasesHtml as a, i (i)}<Rendered html={a} inline />{/each}</p>
+			{/if}
 			<Rendered {html} />
 			<hr />
 			<p class="small muted">

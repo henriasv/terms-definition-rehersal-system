@@ -2,7 +2,8 @@
 /**
  * CLI for the terms vault. Run via `pnpm terms <command>`.
  *
- *   terms add "Name" [-t tag1,tag2] [-a alias1,alias2] [--typst] [--smiles X] [--def "text"]
+ *   terms add "Name" [-t tag1,tag2] [-a alias1,alias2] [--typst] [--def "text"]
+ *        aliases and names may contain $math$ and smiles:<SMILES> tokens
  *   terms list [--tag prefix] [--todo]
  *   terms todo                      terms without a definition
  *   terms due [--tag prefix]        what the review queue would show now
@@ -43,12 +44,11 @@ async function main() {
 			const tags = list(opt('tags', 't'));
 			const aliases = list(opt('aliases', 'a'));
 			const typst = flag('typst');
-			const smiles = opt('smiles');
 			const definition = opt('def');
 			const names = argv.filter((a) => !a.startsWith('-'));
 			if (!names.length) throw new Error('give at least one term name');
 			for (const name of names) {
-				const { term, created } = await createTerm({ term: name, tags, aliases, math: typst ? 'typst' : 'latex', smiles, definition });
+				const { term, created } = await createTerm({ term: name, tags, aliases, math: typst ? 'typst' : 'latex', definition });
 				console.log(`${created ? 'added   ' : 'exists  '} ${term.slug}`);
 			}
 			return;

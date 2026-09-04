@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/client/api';
+	import Rendered from '$lib/components/Rendered.svelte';
 	import Tags from '$lib/components/Tags.svelte';
 	let { data } = $props();
 	let names = $state('');
@@ -69,7 +70,7 @@
 			{:else}
 				<ul class="plain list-terms">
 					{#each data.todo as t (t.slug)}
-						<li><a class="name" href="/terms/{t.slug}">{t.term}</a><span class="row small"><Tags tags={t.tags} /></span></li>
+						<li><a class="name" href="/terms/{t.slug}"><Rendered html={t.termHtml} inline /></a><span class="row small"><Tags tags={t.tags} /></span></li>
 					{/each}
 				</ul>
 			{/if}
@@ -78,7 +79,7 @@
 			<h2>Recently added</h2>
 			<ul class="plain list-terms">
 				{#each data.recent as t (t.slug)}
-					<li><a class="name" href="/terms/{t.slug}">{t.term}</a>{#if !t.defined}<span class="badge todo">to define</span>{/if}<span class="right small muted">{t.added ?? ''}</span></li>
+					<li><a class="name" href="/terms/{t.slug}"><Rendered html={t.termHtml} inline /></a>{#if !t.defined}<span class="badge todo">to define</span>{/if}<span class="right small muted">{t.added ?? ''}</span></li>
 				{/each}
 			</ul>
 			<h3 style="margin-top:1.2rem">Tags</h3>

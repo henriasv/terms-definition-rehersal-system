@@ -6,7 +6,8 @@ import { splitTitle, type Term } from '$lib/term';
 
 async function payload(term: Term) {
 	const terms = await listTerms();
-	return { term: { ...summary(term), raw: term.raw, body: splitTitle(term.body).rest }, rendered: await renderTerm(term, terms) };
+	const rendered = await renderTerm(term, terms);
+	return { term: { ...summary(term), termHtml: rendered.termHtml, aliasesHtml: rendered.aliasesHtml, raw: term.raw, body: splitTitle(term.body).rest }, rendered };
 }
 
 export const GET: RequestHandler = async ({ params }) => {
@@ -19,7 +20,7 @@ export const GET: RequestHandler = async ({ params }) => {
 
 /**
  * Body: { raw }  — replace the whole file, or
- *       { term?, aliases?, tags?, math?, smiles?, reverse?, source?, body? } — patch fields
+ *       { term?, aliases?, tags?, math?, reverse?, source?, body? } — patch fields
  *       (body is the Markdown after the H1). A changed name moves the file; `renamed` says so.
  */
 export const PUT: RequestHandler = async ({ params, request }) => {

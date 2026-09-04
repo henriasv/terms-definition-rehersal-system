@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getSection, joinTitle, newTermFile, parseTerm, patchTermRaw, renameInRaw, resolveTermLink, setSection, slugify, splitTitle, tagMatches } from '../src/lib/term.ts';
+import { getSection, joinTitle, newTermFile, parseTerm, patchTermRaw, plainName, renameInRaw, resolveTermLink, setSection, slugify, splitTitle, tagMatches } from '../src/lib/term.ts';
 
 describe('slugify', () => {
 	it('lowercases and dashes', () => {
@@ -75,12 +75,11 @@ describe('patchTermRaw', () => {
 	const base = newTermFile({ term: 'Old name', tags: ['a'], aliases: ['x'] }).raw + 'extra: keep me\n';
 	it('updates fields, keeps unknown ones, follows the H1', () => {
 		const raw = `---\nterm: Old name\ntags:\n  - a\nextra: keep me\n---\n\n# Old name\n\n## Definition\n\nd\n`;
-		const out = patchTermRaw(raw, { term: 'New name', tags: ['#B/c'], smiles: 'CC', reverse: false, body: '## Definition\n\nnew def' });
+		const out = patchTermRaw(raw, { term: 'New name', tags: ['#B/c'], reverse: false, body: '## Definition\n\nnew def' });
 		expect(out.slug).toBe('new-name');
 		const t = parseTerm(out.slug, out.raw);
 		expect(t.fm.term).toBe('New name');
 		expect(t.fm.tags).toEqual(['b/c']);
-		expect(t.fm.smiles).toBe('CC');
 		expect(t.fm.reverse).toBe(false);
 		expect((t.fm as Record<string, unknown>).extra).toBe('keep me');
 		expect(t.body.startsWith('\n# New name\n\n## Definition')).toBe(true);
@@ -88,8 +87,7 @@ describe('patchTermRaw', () => {
 	});
 	it('clears optional fields when emptied', () => {
 		const raw = `---\nterm: T\nsmiles: CC\nreverse: false\nsource: s\n---\n\n# T\n\n## Definition\n`;
-		const t = parseTerm('t', patchTermRaw(raw, { smiles: '', reverse: true, source: null }).raw);
-		expect(t.fm.smiles).toBeUndefined();
+		const t = parseTerm('t', patchTermRaw(raw, { reverse: true, source: null }).raw);
 		expect(t.fm.reverse).toBeUndefined();
 		expect(t.fm.source).toBeUndefined();
 		void base;
@@ -100,5 +98,15 @@ describe('patchTermRaw', () => {
 		expect(rest).toBe('## Definition\n\nx\n');
 		expect(joinTitle('Foo', rest)).toBe('\n# Foo\n\n## Definition\n\nx\n');
 		expect(splitTitle('no title').title).toBeNull();
+	});
+});
+
+describe('plainName', () => {
+	it('drops smiles tokens and math markup', () => {
+		expect(plainName('Aspirin smiles:CC(=O)Oc1ccccc1C(=O)O')).toBe('Aspirin');
+		expect(plainName('Debye length $\\lambda_D$')).toBe('Debye length lambda_D');
+		expect(plainName('$\\zeta$-potential')).toBe('zeta-potential');
+		expect(slugify('$\\zeta$-potential')).toBe('zeta-potential');
+		expect(slugify('Aspirin smiles:CC(=O)O')).toBe('aspirin');
 	});
 });

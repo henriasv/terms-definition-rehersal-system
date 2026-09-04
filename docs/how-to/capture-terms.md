@@ -10,7 +10,7 @@ The point of the system is that writing down a term costs seconds, even without 
 
 ```bash
 pnpm terms add "zeta potential" "Debye length" -t chemistry/colloids
-pnpm terms add "aspirin" -t chemistry/organic --smiles "CC(=O)Oc1ccccc1C(=O)O"
+pnpm terms add "aspirin" -t chemistry/organic -a "smiles:CC(=O)Oc1ccccc1C(=O)O"
 pnpm terms add "point of zero charge" -t chemistry/surface --typst --def "The pH where net surface charge is zero."
 ```
 
@@ -18,7 +18,7 @@ pnpm terms add "point of zero charge" -t chemistry/surface --typst --def "The pH
 
 ## Metadata
 
-Name, aliases, tags, math dialect, SMILES, source and the reverse-card switch are edited in the form at the top of the term page, not in the file text. The frontmatter is written for you; fields you add by hand in the file are preserved.
+Name, aliases, tags, math dialect, source and the reverse-card switch are edited in the form at the top of the term page, not in the file text. The frontmatter is written for you; fields you add by hand in the file are preserved.
 
 ## By hand
 

@@ -176,6 +176,7 @@
 <div bind:this={host} class="cm-host" data-placeholder={placeholder}></div>
 
 <style>
-	.cm-host { min-height: 60vh; height: 100%; }
+	.cm-host { height: 100%; min-height: 0; }
 	.cm-host :global(.cm-editor) { height: 100%; }
+	.cm-host :global(.cm-scroller) { overflow: auto; }
 </style>

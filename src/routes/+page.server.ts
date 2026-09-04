@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { summary } from '$lib/server/http';
+import { decorate } from '$lib/server/http';
 import { cardStates, listTerms } from '$lib/server/vault';
 import { stats } from '$lib/reviews';
 
@@ -11,8 +11,8 @@ export const load: PageServerLoad = async () => {
 	return {
 		stats: stats(terms, states),
 		total: terms.length,
-		todo: terms.filter((t) => !t.defined).map(summary),
-		recent: recent.map(summary),
+		todo: await Promise.all(terms.filter((t) => !t.defined).map(decorate)),
+		recent: await Promise.all(recent.map(decorate)),
 		tags: [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
 	};
 };

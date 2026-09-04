@@ -4,7 +4,7 @@
 
 | Command | Effect |
 |---|---|
-| `add "Name" ["Name 2" …] [-t tags] [-a aliases] [--typst] [--smiles S] [--def "text"]` | Create term files. Existing slugs are reported as `exists`. Tags and aliases are comma separated. |
+| `add "Name" ["Name 2" …] [-t tags] [-a aliases] [--typst] [--def "text"]` | Create term files. Existing slugs are reported as `exists`. Tags and aliases are comma separated; names and aliases may contain `$math$` and `smiles:…` tokens. |
 | `list [--tag prefix] [--todo]` | One line per term: `?` marks undefined, then slug and tags. |
 | `todo` | Terms without a definition. |
 | `due [--tag prefix]` | What a review session would contain now. |

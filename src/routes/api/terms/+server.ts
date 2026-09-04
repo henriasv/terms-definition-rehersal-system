@@ -1,11 +1,11 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { fail, summary } from '$lib/server/http';
+import { decorate, fail } from '$lib/server/http';
 import { createTerm, listTerms } from '$lib/server/vault';
 import type { MathDialect } from '$lib/term';
 
 export const GET: RequestHandler = async () => {
 	try {
-		return json({ terms: (await listTerms()).map(summary) });
+		return json({ terms: await Promise.all((await listTerms()).map(decorate)) });
 	} catch (e) {
 		return fail(e);
 	}
@@ -13,7 +13,7 @@ export const GET: RequestHandler = async () => {
 
 /**
  * Create one or more terms.
- * Body: { term, tags?, aliases?, math?, smiles?, definition?, source? }
+ * Body: { term, tags?, aliases?, math?, definition?, source? }
  *    or { names: string[], tags? }  for bulk quick-add (one per line in the UI).
  */
 export const POST: RequestHandler = async ({ request }) => {
@@ -30,11 +30,10 @@ export const POST: RequestHandler = async ({ request }) => {
 				tags,
 				aliases: parseList(body.aliases),
 				math: (body.math as MathDialect) ?? 'latex',
-				smiles: body.smiles,
 				definition: body.definition,
 				source: body.source
 			});
-			results.push({ ...summary(term), created });
+			results.push({ ...(await decorate(term)), created });
 		}
 		if (!results.length) return json({ error: 'No term name given' }, { status: 400 });
 		return json({ terms: results }, { status: 201 });

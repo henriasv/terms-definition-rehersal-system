@@ -39,6 +39,8 @@ export async function hydrateSmiles(root: HTMLElement) {
 		el.dataset.done = '1';
 		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 		el.appendChild(svg);
-		await drawSmiles(el.dataset.smiles!, svg);
+		const inline = el.classList.contains('smiles-inline');
+		// Inline drawings use a generous canvas and are scaled down by CSS so labels stay legible.
+		await drawSmiles(el.dataset.smiles!, svg, inline ? { width: 260, height: 170 } : { width: 320, height: 220 });
 	}
 }

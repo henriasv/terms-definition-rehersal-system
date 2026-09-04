@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { hydrateSmiles } from '$lib/client/smiles';
-	let { html, class: cls = '' }: { html: string; class?: string } = $props();
+	/** Server-rendered HTML; SMILES placeholders are drawn client-side after mount and on every change. */
+	let { html, class: cls = '', inline = false }: { html: string; class?: string; inline?: boolean } = $props();
 	let el: HTMLElement | undefined = $state();
 	$effect(() => {
 		void html;
@@ -8,4 +9,4 @@
 	});
 </script>
 
-<div bind:this={el} class="rendered {cls}">{@html html}</div>
+<svelte:element this={inline ? 'span' : 'div'} bind:this={el} class="rendered {cls}" class:inline>{@html html}</svelte:element>

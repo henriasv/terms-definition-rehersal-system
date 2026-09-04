@@ -11,7 +11,6 @@ export interface TermFrontmatter {
 	aliases?: string[];
 	tags?: string[];
 	math?: MathDialect;
-	smiles?: string;
 	reverse?: boolean;
 	added?: string;
 	source?: string;
@@ -38,7 +37,6 @@ export interface NewTermInput {
 	tags?: string[];
 	aliases?: string[];
 	math?: MathDialect;
-	smiles?: string;
 	source?: string;
 	definition?: string;
 	added?: string;
@@ -46,9 +44,26 @@ export interface NewTermInput {
 
 const CHAR_MAP: Record<string, string> = { æ: 'ae', ø: 'o', å: 'a', ß: 'ss', œ: 'oe', ð: 'd', þ: 'th' };
 
+/** `smiles:<token>` inside a name or alias draws a structure; the token runs to the next space. */
+export const SMILES_TOKEN = /smiles:(\S+)/gi;
+
+/**
+ * A name or alias without rendering markup: SMILES tokens dropped, math kept as
+ * its bare text (`$\lambda_D$` → `lambda_D`). Used for slugs, titles and search.
+ */
+export function plainName(text: string): string {
+	return text
+		.replace(SMILES_TOKEN, '')
+		.replace(/\$+/g, '')
+		.replace(/\\[a-zA-Z]+\s?/g, (m) => m.slice(1))
+		.replace(/[{}]/g, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
 /** Deterministic, filename-safe identifier derived from the term name. */
 export function slugify(name: string): string {
-	return name
+	return plainName(name)
 		.toLowerCase()
 		.replace(/[æøåßœðþ]/g, (c) => CHAR_MAP[c] ?? c)
 		.normalize('NFKD')
@@ -119,7 +134,6 @@ export function parseTerm(slug: string, raw: string): Term {
 		tags: normaliseTags(data.tags),
 		math: data.math === 'typst' ? 'typst' : 'latex'
 	};
-	if (typeof data.smiles === 'string') fm.smiles = data.smiles.trim();
 	if (typeof data.reverse === 'boolean') fm.reverse = data.reverse;
 	if (data.added instanceof Date) fm.added = data.added.toISOString().slice(0, 10);
 	else if (typeof data.added === 'string') fm.added = data.added;
@@ -158,7 +172,6 @@ export function newTermFile(input: NewTermInput, now = new Date()): { slug: stri
 		math: input.math ?? 'latex',
 		added: input.added ?? todayISO(now)
 	};
-	if (input.smiles) data.smiles = input.smiles.trim();
 	if (input.source) data.source = input.source.trim();
 	let body = `\n# ${name}\n\n## Definition\n\n## Notes\n`;
 	if (input.definition?.trim()) body = setSection(body, 'Definition', input.definition);
@@ -221,7 +234,6 @@ export interface TermPatch {
 	aliases?: string[];
 	tags?: string[];
 	math?: MathDialect;
-	smiles?: string | null;
 	reverse?: boolean;
 	source?: string | null;
 	/** Body content without the H1 line. */
@@ -243,10 +255,6 @@ export function patchTermRaw(raw: string, patch: TermPatch): { raw: string; slug
 	if (patch.aliases !== undefined) data.aliases = normaliseAliases(patch.aliases);
 	if (patch.tags !== undefined) data.tags = normaliseTags(patch.tags);
 	if (patch.math !== undefined) data.math = patch.math === 'typst' ? 'typst' : 'latex';
-	if (patch.smiles !== undefined) {
-		if (patch.smiles && patch.smiles.trim()) data.smiles = patch.smiles.trim();
-		else delete data.smiles;
-	}
 	if (patch.reverse !== undefined) {
 		if (patch.reverse === false) data.reverse = false;
 		else delete data.reverse;

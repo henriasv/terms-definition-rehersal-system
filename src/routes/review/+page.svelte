@@ -2,16 +2,15 @@
 	import { page } from '$app/state';
 	import { api } from '$lib/client/api';
 	import Rendered from '$lib/components/Rendered.svelte';
-	import Smiles from '$lib/components/Smiles.svelte';
 	import Tags from '$lib/components/Tags.svelte';
-	import type { TermSummary } from '$lib/server/http';
+	import type { TermDecorated } from '$lib/server/http';
 
 	interface Card {
 		key: string;
 		slug: string;
 		dir: 'fwd' | 'rev';
 		isNew: boolean;
-		term: TermSummary;
+		term: TermDecorated;
 		definitionHtml: string;
 		bodyHtml: string;
 		intervals: Record<1 | 2 | 3 | 4, string>;
@@ -120,23 +119,21 @@
 		</p>
 		<div class="card">
 			{#if card.dir === 'fwd'}
-				<div class="front">{card.term.term}</div>
-				{#if card.term.aliases.length}<p class="aliases">{card.term.aliases.join(' · ')}</p>{/if}
+				<div class="front"><Rendered html={card.term.termHtml} inline /></div>
+				{#if card.term.aliasesHtml.length}<p class="aliases">{#each card.term.aliasesHtml as a, i (i)}{#if i}<span class="sep">·</span>{/if}<Rendered html={a} inline />{/each}</p>{/if}
 				<div class="row" style="justify-content:center;margin-top:0.5rem">{#if card.isNew}<span class="badge new">new</span>{/if}<Tags tags={card.term.tags} /></div>
 			{:else}
 				<p class="small muted" style="text-align:center;margin:0 0 0.5rem">Which term is this? {#if card.isNew}<span class="badge new">new</span>{/if}</p>
-				{#if card.term.smiles}<Smiles smiles={card.term.smiles} />{/if}
 				<div class="front def"><Rendered html={card.definitionHtml} /></div>
 			{/if}
 
 			{#if revealed}
 				<div class="back">
 					{#if card.dir === 'fwd'}
-						{#if card.term.smiles}<Smiles smiles={card.term.smiles} />{/if}
 						<Rendered html={card.definitionHtml} />
 					{:else}
-						<div class="answer-term">{card.term.term}</div>
-						{#if card.term.aliases.length}<p class="aliases">{card.term.aliases.join(' · ')}</p>{/if}
+						<div class="answer-term"><Rendered html={card.term.termHtml} inline /></div>
+						{#if card.term.aliasesHtml.length}<p class="aliases">{#each card.term.aliasesHtml as a, i (i)}{#if i}<span class="sep">·</span>{/if}<Rendered html={a} inline />{/each}</p>{/if}
 						<div class="row" style="justify-content:center"><Tags tags={card.term.tags} /></div>
 					{/if}
 					<details class="note" style="margin-top:1rem">

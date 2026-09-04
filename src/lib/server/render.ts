@@ -5,7 +5,7 @@
 import katex from 'katex';
 import { Marked, type Tokens } from 'marked';
 import { scanMath } from '../math.ts';
-import { resolveTermLink, type MathDialect, type Term } from '../term.ts';
+import { SMILES_TOKEN, resolveTermLink, type MathDialect, type Term } from '../term.ts';
 import { renderTypst } from './typst.ts';
 
 export interface RenderError {
@@ -141,11 +141,57 @@ export async function renderMarkdown(md: string, opts: RenderOptions): Promise<{
 	return { html, errors };
 }
 
+/**
+ * Render a name or alias: HTML-escaped text with `$…$` math (in the given dialect)
+ * and `smiles:<token>` structures. No Markdown, no links.
+ */
+export async function renderInline(text: string, math: MathDialect): Promise<{ html: string; errors: RenderError[] }> {
+	const errors: RenderError[] = [];
+	// 1. SMILES tokens → placeholders (before math, so `$` inside a SMILES is impossible anyway).
+	const smiles: string[] = [];
+	let src = text.replace(SMILES_TOKEN, (_m, tok: string) => {
+		smiles.push(tok);
+		return `SMILESTOKEN${smiles.length - 1}X`;
+	});
+	// 2. Math → placeholders.
+	const segs = scanMath(src);
+	for (let i = segs.length - 1; i >= 0; i--) src = src.slice(0, segs[i].start) + `MATHTOKEN${i}X` + src.slice(segs[i].end);
+	let html = esc(src);
+	const rendered = await Promise.all(
+		segs.map(async (s) => {
+			if (math === 'latex') {
+				try {
+					return katex.renderToString(s.src, { displayMode: false, throwOnError: true, output: 'html' });
+				} catch (e) {
+					errors.push({ kind: 'latex', src: s.src, message: (e as Error).message.replace(/^KaTeX parse error: /, '') });
+					return katex.renderToString(s.src, { displayMode: false, throwOnError: false, output: 'html' });
+				}
+			}
+			const r = await renderTypst(s.src, 'inline');
+			if (r.error) {
+				errors.push({ kind: 'typst', src: s.src, message: r.error });
+				return `<span class="math-error">$${esc(s.src)}$</span>`;
+			}
+			return `<span class="typst-inline">${r.svg}</span>`;
+		})
+	);
+	rendered.forEach((out, i) => (html = html.replace(`MATHTOKEN${i}X`, out)));
+	smiles.forEach((tok, i) => (html = html.replace(`SMILESTOKEN${i}X`, `<span class="smiles smiles-inline" data-smiles="${esc(tok)}" title="${esc(tok)}"></span>`)));
+	return { html, errors };
+}
+
+/** Name and aliases of a term as HTML. */
+export async function renderNames(term: Term) {
+	const [name, ...aliases] = await Promise.all([renderInline(term.fm.term, term.math), ...(term.fm.aliases ?? []).map((a) => renderInline(a, term.math))]);
+	return { termHtml: name.html, aliasesHtml: aliases.map((a) => a.html), errors: [...name.errors, ...aliases.flatMap((a) => a.errors)] };
+}
+
 /** Rendered pieces of one term for the term page and the cards. */
 export async function renderTerm(term: Term, terms: Term[]) {
-	const [definition, body] = await Promise.all([
+	const [definition, body, names] = await Promise.all([
 		renderMarkdown(term.definition, { math: term.math, terms }),
-		renderMarkdown(term.body, { math: term.math, terms, stripTitle: true, lineOffset: term.bodyLine - 1 })
+		renderMarkdown(term.body, { math: term.math, terms, stripTitle: true, lineOffset: term.bodyLine - 1 }),
+		renderNames(term)
 	]);
-	return { definition: definition.html, body: body.html, errors: body.errors };
+	return { definition: definition.html, body: body.html, termHtml: names.termHtml, aliasesHtml: names.aliasesHtml, errors: [...names.errors, ...body.errors] };
 }

@@ -35,7 +35,11 @@
 	}
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.5; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.5; }
+/* App shell: the viewport never scrolls; .scroll (or panes inside a main.fill page) do. */
+.app { height: 100dvh; display: flex; flex-direction: column; }
+.scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.scroll:has(> main.fill) { overflow: hidden; display: flex; flex-direction: column; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 h1, h2, h3 { line-height: 1.2; margin: 0 0 0.5em; }
@@ -51,7 +55,7 @@ table { border-collapse: collapse; width: 100%; }
 th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
-.topbar { display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 1.5rem; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 10; }
+.topbar { flex: none; display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 1.5rem; border-bottom: 1px solid var(--line); background: var(--card); z-index: 10; }
 .topbar .brand { font-weight: 700; letter-spacing: 0.02em; color: var(--fg); }
 .topbar nav { display: flex; gap: 1rem; }
 .topbar nav a { color: var(--muted); padding: 0.2rem 0.4rem; border-radius: 6px; }
@@ -60,6 +64,11 @@ th { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-s
 .topbar .vault { color: var(--muted); font-size: 0.8rem; font-family: var(--mono); }
 main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 main.wide { max-width: 1500px; }
+/* Pages that manage their own scrolling: header rows stay, one region flexes and scrolls. */
+main.fill { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; max-width: none; width: 100%; margin: 0; padding: 1rem 1.5rem; }
+main.fill > * { flex: none; }
+main.fill > .grow { flex: 1 1 auto; min-height: 0; }
+.scrollable { overflow: auto; min-height: 0; }
 
 .banner { padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid var(--line); background: var(--soft); margin-bottom: 1rem; }
 .banner.err { border-color: var(--err); }
@@ -106,6 +115,15 @@ a.tag:hover { color: var(--fg); text-decoration: none; border-color: var(--muted
 .rendered a.wikilink.broken { color: var(--warn); border-bottom-color: var(--warn); }
 .rendered .smiles svg { max-width: 100%; height: auto; }
 .rendered .smiles { display: inline-block; margin: 0.4rem 0; }
+.rendered.inline { display: inline; }
+.rendered.inline p { display: inline; margin: 0; }
+.smiles-inline { display: inline-block; vertical-align: middle; margin: 0 0.25em; }
+.smiles-inline svg { height: 4.5em; width: auto; max-width: 100%; }
+.preview .aliases-line .smiles-inline svg { height: 7em; }
+h1 .smiles-inline svg, .card .front .smiles-inline svg, .card .aliases .smiles-inline svg, .answer-term .smiles-inline svg { height: 9em; }
+.card .aliases { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.2em; }
+.aliases-line > .rendered + .rendered::before { content: ' · '; color: var(--muted); }
+.card .aliases .sep { margin: 0 0.4em; }
 /* Inline typst SVGs are 3em tall with the baseline in the middle; negative margins keep line height normal. */
 .rendered .typst-inline svg { margin: -1em 0; vertical-align: -0.5em; }
 .rendered .typst-display, .rendered .typst-block { text-align: center; margin: 0.8em 0; overflow-x: auto; }
@@ -115,12 +133,15 @@ a.tag:hover { color: var(--fg); text-decoration: none; border-color: var(--muted
 pre.math-error { padding: 0.6rem 0.8rem; }
 
 /* Editor */
-.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.7rem 1rem; align-items: end; margin-bottom: 1rem; }
-label.check { display: flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; padding-bottom: 0.5rem; }
-.editor { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; min-height: 60vh; }
-@media (max-width: 900px) { .editor { grid-template-columns: 1fr; } }
+.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.7rem 1rem; align-items: start; margin-bottom: 1rem; }
+.meta .foot { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; align-items: center; padding-top: 0.2rem; border-top: 1px solid var(--line); }
+label.check { display: flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; }
+.editor { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 1rem; min-height: 0; }
+.editor > * { min-height: 0; }
+@media (max-width: 900px) { .editor { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); } }
+.banner.issues { max-height: 7.5rem; overflow: auto; }
 textarea.raw { width: 100%; min-height: 60vh; resize: vertical; line-height: 1.5; tab-size: 2; padding: 0.8rem; }
-.preview { padding: 1rem 1.2rem; }
+.preview { padding: 1rem 1.2rem; overflow: auto; }
 .preview h1 { font-family: var(--serif); }
 .issues li { margin-bottom: 0.3rem; }
 .issues .fix { color: var(--muted); }
