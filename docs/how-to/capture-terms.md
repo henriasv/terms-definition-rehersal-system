@@ -30,4 +30,4 @@ Type `[[` in the editor and a completion list offers every term name and alias; 
 
 ## Later: the definition
 
-The **Define** page works through undefined terms one at a time, oldest first, with **Save and next** and **Skip for now**; the badge in the header is the count. `pnpm terms todo` lists the same set. Undefined terms never appear in review, so a half-captured backlog costs nothing.
+The **Define** page lists undefined terms, oldest first; open any of them and **Save and next** or **Skip for now** walk the rest of the queue, which stays visible in the rail. The badge in the header is the count. `pnpm terms todo` lists the same set. Undefined terms never appear in review, so a half-captured backlog costs nothing.

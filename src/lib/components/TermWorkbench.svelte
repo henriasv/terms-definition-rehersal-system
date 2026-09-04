@@ -34,7 +34,7 @@
 		allTags: string[];
 		linkTargets: string[];
 		mode: 'edit' | 'define';
-		queue?: { position: number; total: number };
+		queue?: { items: { slug: string; termHtml: string; added: string | null }[]; current: string };
 		onsaved?: (r: { slug: string; renamed: boolean }) => void;
 		onskip?: () => void;
 		onstate?: (s: { dirty: boolean; defined: boolean; termHtml: string }) => void;
@@ -237,9 +237,14 @@
 		{#if mode === 'define' && queue}
 			<div>
 				<h6>Queue</h6>
-				<div class="queue-row">
-					<span class="name"><Rendered html={termHtml} inline /></span>
-					<span class="date">{term.added ?? ''}</span>
+				<div class="queue-list">
+					{#each queue.items as q (q.slug)}
+						{#if q.slug === queue.current}
+							<div class="queue-row current"><span class="name"><Rendered html={termHtml} inline /></span><span class="date">{term.added ?? ''}</span></div>
+						{:else}
+							<a class="queue-row" href="/define/{encodeURIComponent(q.slug)}"><span class="name other"><Rendered html={q.termHtml} inline /></span><span class="date">{q.added ?? ''}</span></a>
+						{/if}
+					{/each}
 				</div>
 				<p class="text-muted" style="font-size:12px;margin:var(--space-2) 0 0">Add more from Capture on the Home page; they appear here until defined.</p>
 			</div>

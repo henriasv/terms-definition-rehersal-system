@@ -1,46 +1,29 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
-	import TermWorkbench from '$lib/components/TermWorkbench.svelte';
+	import Rendered from '$lib/components/Rendered.svelte';
 	let { data } = $props();
-	async function next() {
-		// The saved term is defined now and leaves the queue by itself; keep the skip order.
-		await goto(`/define${data.skip.length ? `?skip=${encodeURIComponent(data.skip.join(','))}` : ''}`, { invalidateAll: true });
-	}
-	async function skip() {
-		if (!data.current) return;
-		const skips = [...data.skip.filter((s) => s !== data.current!.term.slug), data.current.term.slug];
-		// Once everything has been skipped, start the round again.
-		const all = skips.length >= data.total ? [] : skips;
-		await goto(`/define${all.length ? `?skip=${encodeURIComponent(all.join(','))}` : ''}`, { invalidateAll: true });
-	}
 </script>
 
 <svelte:head><title>Define terms</title></svelte:head>
-<main class="wide fill">
+<main class="fill">
 	<div class="page-title" style="align-items:baseline">
-		<h2>Define terms {#if data.current}<span class="count">{data.skip.length + 1 > data.total ? data.total : data.skip.length + 1} of {data.total}</span>{/if}</h2>
-		<span class="small muted">Captured terms without a definition. Write one, save, and the card joins rotation.</span>
+		<h2>Define terms <span class="count">{data.queue.length}</span></h2>
+		<span class="small muted">Captured terms without a definition, oldest first. Pick one; Save and next walks the rest.</span>
+		{#if data.queue.length}<a class="btn primary right" href="/define/{encodeURIComponent(data.queue[0].slug)}">Start from the top <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>{/if}
 	</div>
-	{#if data.current}
-		{#key data.current.term.slug}
-			<TermWorkbench
-				term={data.current.term}
-				body={data.current.body}
-				rendered={data.current.rendered}
-				issues={data.current.issues}
-				cards={data.current.cards}
-				file={data.current.file}
-				allTags={data.allTags}
-				linkTargets={data.current.linkTargets}
-				mode="define"
-				queue={{ position: data.current.position, total: data.total }}
-				onsaved={next}
-				onskip={skip}
-			/>
-		{/key}
+	{#if data.queue.length === 0}
+		<div class="banner"><p style="margin:0">Nothing left to define. Capture terms on the <a href="/">Home</a> page and they queue up here.</p></div>
 	{:else}
-		<div class="banner">
-			<p style="margin:0">Nothing left to define. Capture terms on the <a href="/">Home</a> page and they queue up here.</p>
+		<div class="rows grow scrollable">
+			{#each data.queue as t (t.slug)}
+				<a class="term-row" href="/define/{encodeURIComponent(t.slug)}">
+					<span class="name"><Rendered html={t.termHtml} inline /></span>
+					<span class="meta">
+						{#if t.aliasesHtml.length}<span class="aliases-line">{#each t.aliasesHtml as a, i (i)}<Rendered html={a} inline />{/each}</span>{/if}
+						<span class="tnum">{t.added ?? ''}</span>
+					</span>
+					<span class="tags">{#each t.tags as g, i (`${i}:${g}`)}<span class="tag tag-neutral">{g}</span>{/each}</span>
+				</a>
+			{/each}
 		</div>
 	{/if}
 </main>
