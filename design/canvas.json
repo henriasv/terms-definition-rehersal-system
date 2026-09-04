@@ -1,0 +1,86 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Dashboard",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "TermList.dc.html",
+      "title": "Term list",
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "TermEditor.dc.html",
+      "title": "Term editor",
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "Review.dc.html",
+      "title": "Review card",
+      "x": 4560,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "Lint.dc.html",
+      "title": "Lint",
+      "x": 6080,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "AltMergedHome.dc.html",
+      "title": "Alternative A: capture, backlog and list on one screen",
+      "x": 0,
+      "y": 1140,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "AltEditorRail.dc.html",
+      "title": "Alternative B: editor with a metadata rail",
+      "x": 1520,
+      "y": 1140,
+      "w": 1440,
+      "h": 900
+    }
+  ],
+  "annotations": [
+    {
+      "id": "row-as-built",
+      "x": 0,
+      "y": -220,
+      "w": 560,
+      "text": "As built (September 2026). Five screens at 1440\u00d7900. Fixed viewport: only inner panes scroll. Math and structures are approximated in these mockups; the app renders them with KaTeX, typst and smiles-drawer."
+    },
+    {
+      "id": "alt-a",
+      "x": 3040,
+      "y": 1160,
+      "w": 420,
+      "text": "Alternative A: one home screen.\nCapture, the review summary, and the filterable list live together; the to-define backlog becomes a filter chip instead of its own panel.\nFor: one place to add and find things, the list gets the whole height.\nAgainst: no recently-added panel; capture and search compete for attention at the top."
+    },
+    {
+      "id": "alt-b",
+      "x": 3040,
+      "y": 1440,
+      "w": 420,
+      "text": "Alternative B: metadata as a side rail.\nFields stack in a 280 px rail; editor and preview get the full height.\nFor: more vertical room, metadata always in view, chips wrap less awkwardly.\nAgainst: editor and preview lose width; three columns get cramped below ~1300 px."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

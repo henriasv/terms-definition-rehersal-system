@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #faf9f6; color: #1e1e1c; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; }
+    * { box-sizing: border-box; }
+    a { color: #2b6a9c; text-decoration: none; } a:hover { color: #2b6a9c; text-decoration: underline; }
+    h1, h2, h3 { line-height: 1.2; margin: 0 0 0.5em; }
+    h1 { font-size: 1.6rem; } h2 { font-size: 1.2rem; }
+    h3 { font-size: 1rem; color: #6d6c67; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .mono, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+    code { background: #f0eee8; padding: 0.05em 0.3em; border-radius: 4px; }
+    .topbar { flex: none; display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 1.5rem; border-bottom: 1px solid #e1dfd8; background: #ffffff; }
+    .brand { font-weight: 700; letter-spacing: 0.02em; color: #1e1e1c; }
+    .nav { display: flex; gap: 1rem; }
+    .nav a { color: #6d6c67; padding: 0.2rem 0.4rem; border-radius: 6px; }
+    .nav a.current { color: #1e1e1c; background: #f0eee8; }
+    .vault { color: #6d6c67; font-size: 0.8rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-left: auto; }
+    .panel { background: #ffffff; border: 1px solid #e1dfd8; border-radius: 10px; padding: 1rem 1.2rem; }
+    .muted { color: #6d6c67; } .small { font-size: 0.85rem; }
+    .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 7px; border: 1px solid #e1dfd8; background: #ffffff; color: #1e1e1c; font: inherit; }
+    .btn.primary { background: #2b6a9c; color: #ffffff; border-color: #2b6a9c; }
+    .btn.danger { color: #b3261e; }
+    .btn.disabled { opacity: 0.5; }
+    .btn.small { padding: 0.25rem 0.6rem; font-size: 0.85rem; }
+    kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75em; padding: 0 0.35em; border: 1px solid currentColor; border-radius: 4px; opacity: 0.7; }
+    .input { font: inherit; color: #1e1e1c; background: #ffffff; border: 1px solid #e1dfd8; border-radius: 7px; padding: 0.45rem 0.6rem; }
+    .input.placeholder { color: #8a8983; }
+    .field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: #6d6c67; }
+    .field .input { font-size: 1rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; padding: 0.3rem 0.4rem; border: 1px solid #e1dfd8; border-radius: 7px; background: #ffffff; min-height: 2.4rem; font-size: 1rem; color: #1e1e1c; }
+    .chip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; padding: 0.1rem 0.55rem; border-radius: 999px; background: #f0eee8; border: 1px solid #e1dfd8; }
+    .chip .x { color: #6d6c67; font-size: 1rem; line-height: 1; }
+    .tag { display: inline-block; font-size: 0.78rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: #f0eee8; color: #6d6c67; border: 1px solid #e1dfd8; white-space: nowrap; }
+    .tag b { color: #1e1e1c; font-weight: 600; margin-left: 0.3em; }
+    .tag.on { border-color: #1e1e1c; color: #1e1e1c; }
+    .badge { display: inline-block; font-size: 0.72rem; padding: 0.05rem 0.45rem; border-radius: 4px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+    .badge.todo { background: rgba(168, 101, 0, 0.15); color: #a86500; }
+    .badge.typst { background: rgba(43, 106, 156, 0.15); color: #2b6a9c; }
+    .badge.error { background: rgba(179, 38, 30, 0.15); color: #b3261e; }
+    .badge.warn { background: rgba(168, 101, 0, 0.15); color: #a86500; }
+    .badge.info { background: rgba(75, 92, 107, 0.15); color: #4b5c6b; }
+    .badge.new { background: rgba(46, 125, 79, 0.15); color: #2e7d4f; }
+    .stat .n { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .stat .l { color: #6d6c67; font-size: 0.85rem; }
+    .list li { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.35rem 0; border-bottom: 1px solid #e1dfd8; }
+    .list li .name { font-weight: 500; color: #2b6a9c; }
+    ul.plain { list-style: none; padding: 0; margin: 0; }
+    .m { font-family: 'Times New Roman', Times, serif; font-size: 1.05em; }
+    .m i { font-style: italic; }
+    .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.15; margin: 0 0.15em; }
+    .frac .top { border-bottom: 1px solid #1e1e1c; padding: 0 0.2em; }
+    .cm { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92rem; line-height: 1.55; padding: 0.9rem 1rem; background: #ffffff; border: 1px solid #e1dfd8; border-radius: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .cm .h { color: #2b6a9c; font-weight: 700; } .cm .math { color: #7a3e9d; } .cm .lang { color: #2e7d4f; font-weight: 600; } .cm .active { background: rgba(43, 106, 156, 0.06); display: block; margin: 0 -1rem; padding: 0 1rem; }
+    .rendered p { margin: 0 0 0.8em; } .rendered p:last-child { margin-bottom: 0; } .rendered { line-height: 1.6; }
+    .rendered h2 { margin-top: 0.4em; }
+    .card { background: #ffffff; border: 1px solid #e1dfd8; border-radius: 14px; padding: 2rem 2.2rem; width: 760px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+    .front { font-family: Charter, 'Iowan Old Style', Georgia, serif; font-size: 1.7rem; text-align: center; }
+    .rate .btn { flex-direction: column; min-width: 7rem; padding: 0.6rem 0.8rem; }
+    .rate .when { font-size: 0.75rem; color: #6d6c67; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #e1dfd8; vertical-align: top; }
+    th { font-size: 0.8rem; color: #6d6c67; text-transform: uppercase; letter-spacing: 0.04em; }
+  </style>
+</helmet>
+<div class="app" style="width: 1440px; height: 900px; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+<div class="topbar"><span class="brand">Terms</span><div class="nav"><a href="#" class="">Home</a><a href="#" class="">Terms</a><a href="#" class="">Review</a><a href="#" class="current">Lint</a></div><span class="vault">/Users/henriasv/repos/terms-vault</span></div>
+<div style="flex: 1 1 auto; min-height: 0; overflow: auto; padding: 1.5rem;">
+<div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.6rem;">
+  <h1 style="margin: 0;">Lint <span class="muted small">2 errors · 1 warning · 2 notes</span></h1>
+  <p class="muted small" style="margin: 0 0 0.6rem;">Math dialect mismatches, render errors from KaTeX and typst, broken links, missing and orphaned assets. Same output as <code>pnpm terms lint</code>.</p>
+  <table class="panel" style="padding: 0;">
+    <thead><tr><th>Level</th><th>Term</th><th>Line</th><th>Message</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge error">error</span></td><td><a href="#">bad-example</a></td><td class="mono small">13</td><td>math is "latex" but $frac(a, b)$ looks like typst (frac().<div class="small muted">Set `math: typst` in the frontmatter, or rewrite the snippet in LaTeX.</div></td></tr>
+      <tr><td><span class="badge error">error</span></td><td><a href="#">bad-example</a></td><td class="mono small">13</td><td>KaTeX: Unexpected end of input in a macro argument, expected '}' at end of input: \frac{a}{<div class="small muted">If this snippet is typst, set `math: typst`.</div></td></tr>
+      <tr><td><span class="badge warn">warn</span></td><td><a href="#">point-of-zero-charge</a></td><td class="mono small">19</td><td>[[Stern layer]] does not match any term, name or alias.<div class="small muted">terms add "Stern layer"</div></td></tr>
+      <tr><td><span class="badge info">info</span></td><td><span class="muted">—</span></td><td class="mono small"></td><td>Assets/salicylic-acid-20260904-673c4cb6.png is not embedded by any term.<div class="small muted">terms assets --prune</div><span class="btn danger small" style="margin-top: 0.3rem;">Delete file</span></td></tr>
+      <tr><td><span class="badge info">info</span></td><td><a href="#">zeta-potential</a></td><td class="mono small"></td><td>No definition yet; excluded from review.</td></tr>
+    </tbody>
+  </table>
+</div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

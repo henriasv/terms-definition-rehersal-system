@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #faf9f6; color: #1e1e1c; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; }
+    * { box-sizing: border-box; }
+    a { color: #2b6a9c; text-decoration: none; } a:hover { color: #2b6a9c; text-decoration: underline; }
+    h1, h2, h3 { line-height: 1.2; margin: 0 0 0.5em; }
+    h1 { font-size: 1.6rem; } h2 { font-size: 1.2rem; }
+    h3 { font-size: 1rem; color: #6d6c67; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .mono, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+    code { background: #f0eee8; padding: 0.05em 0.3em; border-radius: 4px; }
+    .topbar { flex: none; display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 1.5rem; border-bottom: 1px solid #e1dfd8; background: #ffffff; }
+    .brand { font-weight: 700; letter-spacing: 0.02em; color: #1e1e1c; }
+    .nav { display: flex; gap: 1rem; }
+    .nav a { color: #6d6c67; padding: 0.2rem 0.4rem; border-radius: 6px; }
+    .nav a.current { color: #1e1e1c; background: #f0eee8; }
+    .vault { color: #6d6c67; font-size: 0.8rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-left: auto; }
+    .panel { background: #ffffff; border: 1px solid #e1dfd8; border-radius: 10px; padding: 1rem 1.2rem; }
+    .muted { color: #6d6c67; } .small { font-size: 0.85rem; }
+    .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 7px; border: 1px solid #e1dfd8; background: #ffffff; color: #1e1e1c; font: inherit; }
+    .btn.primary { background: #2b6a9c; color: #ffffff; border-color: #2b6a9c; }
+    .btn.danger { color: #b3261e; }
+    .btn.disabled { opacity: 0.5; }
+    .btn.small { padding: 0.25rem 0.6rem; font-size: 0.85rem; }
+    kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75em; padding: 0 0.35em; border: 1px solid currentColor; border-radius: 4px; opacity: 0.7; }
+    .input { font: inherit; color: #1e1e1c; background: #ffffff; border: 1px solid #e1dfd8; border-radius: 7px; padding: 0.45rem 0.6rem; }
+    .input.placeholder { color: #8a8983; }
+    .field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: #6d6c67; }
+    .field .input { font-size: 1rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; padding: 0.3rem 0.4rem; border: 1px solid #e1dfd8; border-radius: 7px; background: #ffffff; min-height: 2.4rem; font-size: 1rem; color: #1e1e1c; }
+    .chip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; padding: 0.1rem 0.55rem; border-radius: 999px; background: #f0eee8; border: 1px solid #e1dfd8; }
+    .chip .x { color: #6d6c67; font-size: 1rem; line-height: 1; }
+    .tag { display: inline-block; font-size: 0.78rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: #f0eee8; color: #6d6c67; border: 1px solid #e1dfd8; white-space: nowrap; }
+    .tag b { color: #1e1e1c; font-weight: 600; margin-left: 0.3em; }
+    .tag.on { border-color: #1e1e1c; color: #1e1e1c; }
+    .badge { display: inline-block; font-size: 0.72rem; padding: 0.05rem 0.45rem; border-radius: 4px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+    .badge.todo { background: rgba(168, 101, 0, 0.15); color: #a86500; }
+    .badge.typst { background: rgba(43, 106, 156, 0.15); color: #2b6a9c; }
+    .badge.error { background: rgba(179, 38, 30, 0.15); color: #b3261e; }
+    .badge.warn { background: rgba(168, 101, 0, 0.15); color: #a86500; }
+    .badge.info { background: rgba(75, 92, 107, 0.15); color: #4b5c6b; }
+    .badge.new { background: rgba(46, 125, 79, 0.15); color: #2e7d4f; }
+    .stat .n { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .stat .l { color: #6d6c67; font-size: 0.85rem; }
+    .list li { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.35rem 0; border-bottom: 1px solid #e1dfd8; }
+    .list li .name { font-weight: 500; color: #2b6a9c; }
+    ul.plain { list-style: none; padding: 0; margin: 0; }
+    .m { font-family: 'Times New Roman', Times, serif; font-size: 1.05em; }
+    .m i { font-style: italic; }
+    .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.15; margin: 0 0.15em; }
+    .frac .top { border-bottom: 1px solid #1e1e1c; padding: 0 0.2em; }
+    .cm { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92rem; line-height: 1.55; padding: 0.9rem 1rem; background: #ffffff; border: 1px solid #e1dfd8; border-radius: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .cm .h { color: #2b6a9c; font-weight: 700; } .cm .math { color: #7a3e9d; } .cm .lang { color: #2e7d4f; font-weight: 600; } .cm .active { background: rgba(43, 106, 156, 0.06); display: block; margin: 0 -1rem; padding: 0 1rem; }
+    .rendered p { margin: 0 0 0.8em; } .rendered p:last-child { margin-bottom: 0; } .rendered { line-height: 1.6; }
+    .rendered h2 { margin-top: 0.4em; }
+    .card { background: #ffffff; border: 1px solid #e1dfd8; border-radius: 14px; padding: 2rem 2.2rem; width: 760px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+    .front { font-family: Charter, 'Iowan Old Style', Georgia, serif; font-size: 1.7rem; text-align: center; }
+    .rate .btn { flex-direction: column; min-width: 7rem; padding: 0.6rem 0.8rem; }
+    .rate .when { font-size: 0.75rem; color: #6d6c67; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #e1dfd8; vertical-align: top; }
+    th { font-size: 0.8rem; color: #6d6c67; text-transform: uppercase; letter-spacing: 0.04em; }
+  </style>
+</helmet>
+<div class="app" style="width: 1440px; height: 900px; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+<div class="topbar"><span class="brand">Terms</span><div class="nav"><a href="#" class="current">Home</a><a href="#" class="">Terms</a><a href="#" class="">Review</a><a href="#" class="">Lint</a></div><span class="vault">/Users/henriasv/repos/terms-vault</span></div>
+<div style="flex: 1 1 auto; min-height: 0; overflow: auto; padding: 1.5rem;">
+<div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.2rem;">
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem;">
+    <section class="panel" style="display: flex; flex-direction: column; gap: 0.6rem;">
+      <h2 style="margin: 0;">Capture</h2>
+      <p class="muted small" style="margin: 0;">One term per line. Definitions can wait; tags apply to all lines.</p>
+      <label class="field">Terms
+        <div class="input placeholder" style="min-height: 6.4rem; white-space: pre-line;">surface deprotonation constant
+zeta potential</div>
+      </label>
+      <label class="field">Tags (Enter adds one; nest with /)
+        <div class="chips"><span class="input placeholder" style="border: 0; padding: 0.2rem;">chemistry/surface</span></div>
+      </label>
+      <div style="display: flex; gap: 0.6rem; align-items: center;"><span class="btn primary">Add <kbd>⌘↵</kbd></span></div>
+    </section>
+    <section class="panel" style="display: flex; flex-direction: column; gap: 0.8rem;">
+      <h2 style="margin: 0;">Rehearsal</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; margin: 0.4rem 0 0.6rem;">
+        <div class="stat" style="display: flex; flex-direction: column; gap: 0.1rem;"><span class="n">1</span><span class="l">due now</span></div>
+        <div class="stat" style="display: flex; flex-direction: column; gap: 0.1rem;"><span class="n">7</span><span class="l">new cards</span></div>
+        <div class="stat" style="display: flex; flex-direction: column; gap: 0.1rem;"><span class="n">2</span><span class="l">cards in rotation</span></div>
+      </div>
+      <div style="display: flex; gap: 0.6rem; align-items: center;"><span class="btn primary">Start review</span><span class="small muted">6 terms, 1 still to define</span></div>
+    </section>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem;">
+    <section class="panel">
+      <h2>To define <span class="muted small">(1)</span></h2>
+      <ul class="plain list">
+        <li><a href="#" class="name">Zeta potential</a><span style="display: flex; gap: 0.6rem;"><span class="tag">chemistry/colloids</span><span class="tag">physics/electrokinetics</span></span></li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Recently added</h2>
+      <ul class="plain list">
+        <li><a href="#" class="name">Debye length <span class="m"><i>λ</i><sub><i>D</i></sub></span></a><span class="small muted" style="margin-left: auto;">2026-09-04</span></li>
+        <li><a href="#" class="name">Point of zero charge</a><span class="small muted" style="margin-left: auto;">2026-09-04</span></li>
+        <li><a href="#" class="name">Salicylic acid</a><span class="small muted" style="margin-left: auto;">2026-09-04</span></li>
+        <li><a href="#" class="name">Surface deprotonation constant</a><span class="small muted" style="margin-left: auto;">2026-09-04</span></li>
+        <li><a href="#" class="name">Zeta potential</a><span class="badge todo">to define</span><span class="small muted" style="margin-left: auto;">2026-09-03</span></li>
+      </ul>
+      <h3 style="margin-top: 1.2rem;">Tags</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+        <span class="tag">chemistry/surface<b>2</b></span><span class="tag">physics/electrokinetics<b>2</b></span><span class="tag">chemistry/colloids<b>1</b></span><span class="tag">chemistry/organic<b>1</b></span><span class="tag">geochemistry<b>1</b></span><span class="tag">meta<b>1</b></span>
+      </div>
+    </section>
+  </div>
+</div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

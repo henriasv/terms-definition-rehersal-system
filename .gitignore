@@ -15,3 +15,5 @@ build/
 .idea/
 # Per-machine setup state (vault path) written by setup scripts.
 setup/.local.conf
+# Seeded design canvas (regenerated from design/*.dc.html)
+design/terms-rehearsal-screens.html
