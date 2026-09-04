@@ -13,6 +13,7 @@ export const load: PageServerLoad = async () => {
 		total: terms.length,
 		todo: await Promise.all(terms.filter((t) => !t.defined).map(decorate)),
 		recent: await Promise.all(recent.map(decorate)),
-		tags: [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+		tags: [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+		allTags: [...tagCounts.keys()].sort()
 	};
 };

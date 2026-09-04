@@ -6,7 +6,7 @@ import { cardStates, listAssets, listTerms } from '$lib/server/vault';
 import { lintTerm, type LintIssue } from '$lib/lint';
 import { cardKey } from '$lib/reviews';
 import { vaultPath } from '$lib/server/config';
-import { splitTitle } from '$lib/term';
+import { linkTargets, splitTitle } from '$lib/term';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const [terms, assets, states] = await Promise.all([listTerms(), listAssets(), cardStates()]);
@@ -26,6 +26,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		issues,
 		cards: { fwd: due('fwd'), rev: due('rev') },
 		file: `${vaultPath()}/Terms/${term.slug}.md`,
+		linkTargets: linkTargets(terms.filter((t) => t.slug !== term.slug)),
 		allTags
 	};
 };

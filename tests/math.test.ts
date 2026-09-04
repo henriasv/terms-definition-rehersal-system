@@ -62,3 +62,11 @@ describe('scanMath fences', () => {
 		expect(scanMath(t).map((s) => s.src)).toEqual(['x', 'y']);
 	});
 });
+
+describe('orphan assets', () => {
+	it('lists unreferenced assets', () => {
+		const t = parseTerm('foo', newTermFile({ term: 'Foo', definition: 'see ![[used.png]]' }).raw);
+		const issues = lintAll({ terms: [t], assets: new Set(['used.png', 'lost.png']) });
+		expect(issues.filter((i) => i.code === 'orphan-asset').map((i) => i.asset)).toEqual(['lost.png']);
+	});
+});

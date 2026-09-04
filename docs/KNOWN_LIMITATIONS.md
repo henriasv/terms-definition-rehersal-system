@@ -4,7 +4,6 @@
 - **No phone surface yet.** Capture and review are desktop only. A Telegram agent could call the same server functions.
 - **Typst needs the CLI.** Without `typst` on `PATH`, typst snippets show an error instead of rendering. LaTeX needs nothing.
 - **Inline typst alignment is approximate for tall content.** Snippets taller than 1.5 em above the baseline sit slightly high.
-- **No FSRS parameter optimisation.** Defaults only; the log has what an optimiser needs.
-- **No autocompletion in the editor.** CodeMirror highlights Markdown, math and `[[links]]`, but does not suggest term names or tags inside the text.
-- **Renames do not rewrite links in other files.** Links by name or alias keep working; links by the old slug break and lint reports them.
-- **Asset deletion is manual.** Nothing removes orphaned files from `Assets/`.
+- **Optimiser needs data.** `terms optimize` wants a few hundred reviews before the fitted weights beat the defaults.
+- **Undo is one level per card.** You can take back the most recent rating of a card, not older ones.
+- **A name needs plain text.** A term whose name is only a SMILES token or a formula has no text to build a filename from and is refused; add a word.

@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/client/api';
+	import ChipsInput from '$lib/components/ChipsInput.svelte';
 	import Rendered from '$lib/components/Rendered.svelte';
 	import Tags from '$lib/components/Tags.svelte';
 	let { data } = $props();
 	let names = $state('');
-	let tags = $state('');
+	let tags = $state<string[]>([]);
 	let busy = $state(false);
 	let msg = $state('');
 
@@ -39,8 +40,8 @@
 				<label class="field">Terms
 					<textarea bind:value={names} rows="4" placeholder="surface deprotonation constant&#10;zeta potential" onkeydown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add(e as unknown as SubmitEvent); }}></textarea>
 				</label>
-				<label class="field">Tags (space separated, nest with /)
-					<input type="text" bind:value={tags} placeholder="chemistry/surface geochemistry" />
+				<label class="field">Tags (Enter adds one; nest with /)
+					<ChipsInput bind:values={tags} suggestions={data.allTags} placeholder="chemistry/surface" />
 				</label>
 				<div class="row">
 					<button class="btn primary" type="submit" disabled={busy}>Add <kbd>⌘↵</kbd></button>

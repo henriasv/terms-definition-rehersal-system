@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getSection, joinTitle, newTermFile, parseTerm, patchTermRaw, plainName, renameInRaw, resolveTermLink, setSection, slugify, splitTitle, tagMatches } from '../src/lib/term.ts';
+import { getSection, joinTitle, newTermFile, parseTerm, patchTermRaw, plainName, renameInRaw, resolveTermLink, rewriteLinks, setSection, slugify, splitTitle, tagMatches, withoutSection } from '../src/lib/term.ts';
 
 describe('slugify', () => {
 	it('lowercases and dashes', () => {
@@ -108,5 +108,26 @@ describe('plainName', () => {
 		expect(plainName('$\\zeta$-potential')).toBe('zeta-potential');
 		expect(slugify('$\\zeta$-potential')).toBe('zeta-potential');
 		expect(slugify('Aspirin smiles:CC(=O)O')).toBe('aspirin');
+	});
+});
+
+describe('plainName wrappers, withoutSection, rewriteLinks', () => {
+	it('drops formatting commands, keeps symbols', () => {
+		expect(plainName('$\\mathrm{p}K_a$ of a surface')).toBe('pK_a of a surface');
+		expect(slugify('$\\mathrm{p}K_a$')).toBe('pk-a');
+		expect(plainName('$\\ce{H2O}$')).toBe('H2O');
+		expect(plainName('Point of zero charge (PZC)')).toBe('Point of zero charge (PZC)');
+		expect(plainName('$upright(p) K_(a 1)$')).toBe('p K_a 1');
+	});
+	it('removes a section', () => {
+		const body = '## Definition\n\nd\n\n## Notes\n\nn\n\n## Examples\n\ne\n';
+		expect(withoutSection(body, 'Definition')).toBe('## Notes\n\nn\n\n## Examples\n\ne\n');
+		expect(withoutSection(body, 'Notes')).toBe('## Definition\n\nd\n\n## Examples\n\ne\n');
+		expect(withoutSection('## Definition\n\nd\n', 'Definition').trim()).toBe('');
+	});
+	it('rewrites links by old name or slug, not aliases or embeds', () => {
+		const body = 'See [[Old name]], [[old-name|label]], [[Alias]] and ![[old-name.png]].';
+		expect(rewriteLinks(body, { term: 'Old name', slug: 'old-name' }, 'New name')).toBe('See [[New name]], [[New name|label]], [[Alias]] and ![[old-name.png]].');
+		expect(rewriteLinks('nothing', { term: 'Old name', slug: 'old-name' }, 'New name')).toBeNull();
 	});
 });

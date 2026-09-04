@@ -12,7 +12,7 @@
 		isNew: boolean;
 		term: TermDecorated;
 		definitionHtml: string;
-		bodyHtml: string;
+		notesHtml: string;
 		intervals: Record<1 | 2 | 3 | 4, string>;
 	}
 	let { data } = $props();
@@ -24,6 +24,7 @@
 	let counts = $state({ due: 0, new: 0, newTotal: 0 });
 	let lookahead = $state(20);
 	let done = $state({ total: 0, again: 0 });
+	let last: { idx: number; rating: number; requeued: boolean } | null = $state(null);
 	let shownAt = 0;
 	let err = $state('');
 	let busy = $state(false);
@@ -56,9 +57,9 @@
 			done.total++;
 			if (r === 1) done.again++;
 			// Cards that come back within the session window go to the end of the queue.
-			if (new Date(res.due).getTime() - Date.now() < lookahead * 60_000) {
-				queue.push({ ...card, isNew: false, intervals: res.intervals });
-			}
+			const requeued = new Date(res.due).getTime() - Date.now() < lookahead * 60_000;
+			if (requeued) queue.push({ ...card, isNew: false, intervals: res.intervals });
+			last = { idx, rating: r, requeued };
 			idx++;
 			if (idx >= queue.length) phase = 'done';
 			else show();
@@ -68,7 +69,33 @@
 			busy = false;
 		}
 	}
+	/** Take back the previous rating: the log gets an undo event and the card comes back up. */
+	async function undo() {
+		if (!last || busy) return;
+		busy = true;
+		try {
+			const prev = queue[last.idx];
+			const res = await api<{ intervals: Card['intervals'] }>('/api/review/undo', { method: 'POST', json: { card: prev.key } });
+			if (last.requeued) queue.splice(queue.length - 1, 1);
+			queue[last.idx] = { ...prev, intervals: res.intervals };
+			done.total--;
+			if (last.rating === 1) done.again--;
+			idx = last.idx;
+			last = null;
+			phase = 'running';
+			show();
+		} catch (e) {
+			err = (e as Error).message;
+		} finally {
+			busy = false;
+		}
+	}
 	function onKey(e: KeyboardEvent) {
+		if (e.key === 'u' && last && (phase === 'running' || phase === 'done')) {
+			e.preventDefault();
+			undo();
+			return;
+		}
 		if (phase !== 'running') return;
 		const t = e.target as HTMLElement;
 		if (t && /^(input|textarea|select)$/i.test(t.tagName)) return;
@@ -107,7 +134,7 @@
 					{#each data.tags as [t, n] (t)}<option value={t}>{t} ({n})</option>{/each}
 				</select>
 			</label>
-			<p class="small muted">Space reveals the answer, 1–4 rates it (Again, Hard, Good, Easy); Space again means Good.</p>
+			<p class="small muted">Space reveals the answer, 1–4 rates it (Again, Hard, Good, Easy); Space again means Good; U takes back the last rating.</p>
 			{#if err}<div class="banner err">{err}</div>{/if}
 			<button class="btn primary" onclick={start}>Start</button>
 		</div>
@@ -116,6 +143,7 @@
 		<p class="small muted" style="text-align:center;margin:0 0 1rem">
 			{remaining} left · {counts.due} due · {counts.new} new{#if counts.newTotal > counts.new} (of {counts.newTotal} unseen){/if}
 			{#if tag}· tag {tag}{/if}
+			{#if last}· <button class="linkish" onclick={undo} disabled={busy}>undo last rating <kbd>u</kbd></button>{/if}
 		</p>
 		<div class="card">
 			{#if card.dir === 'fwd'}
@@ -136,10 +164,14 @@
 						{#if card.term.aliasesHtml.length}<p class="aliases">{#each card.term.aliasesHtml as a, i (i)}{#if i}<span class="sep">·</span>{/if}<Rendered html={a} inline />{/each}</p>{/if}
 						<div class="row" style="justify-content:center"><Tags tags={card.term.tags} /></div>
 					{/if}
-					<details class="note" style="margin-top:1rem">
-						<summary>Full note · <a href="/terms/{card.slug}">open term</a></summary>
-						<div style="margin-top:0.6rem"><Rendered html={card.bodyHtml} /></div>
-					</details>
+					{#if card.notesHtml.trim()}
+						<details class="note" style="margin-top:1rem">
+							<summary>Notes · <a href="/terms/{card.slug}">open term</a></summary>
+							<div style="margin-top:0.6rem"><Rendered html={card.notesHtml} /></div>
+						</details>
+					{:else}
+						<p class="small muted" style="margin-top:1rem"><a href="/terms/{card.slug}">Open term</a></p>
+					{/if}
 				</div>
 				<div class="rate">
 					<button class="btn r1" onclick={() => rate(1)} disabled={busy}><span>Again <kbd>1</kbd></span><span class="when">{when(card.intervals[1])}</span></button>
@@ -160,7 +192,10 @@
 			{:else}
 				<p>{done.total} reviews, {done.again} marked Again.</p>
 			{/if}
-			<div class="row" style="justify-content:center"><button class="btn" onclick={() => (phase = 'setup')}>Back</button><a class="btn primary" href="/">Home</a></div>
+			<div class="row" style="justify-content:center">
+				{#if last}<button class="btn" onclick={undo} disabled={busy}>Undo last rating <kbd>u</kbd></button>{/if}
+				<button class="btn" onclick={() => (phase = 'setup')}>Back</button><a class="btn primary" href="/">Home</a>
+			</div>
 		</div>
 	{/if}
 </main>

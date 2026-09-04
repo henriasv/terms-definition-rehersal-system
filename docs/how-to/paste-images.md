@@ -10,6 +10,10 @@ Identical bytes map to the same name, so pasting twice does not duplicate the fi
 
 The embed syntax is Obsidian's, so the note renders there too.
 
+## Cleaning up
+
+Images you pasted and later removed from the text stay in `Assets/`. The Lint page lists them as `orphan-asset` with a delete button, and `pnpm terms assets --prune` deletes them all.
+
 ## Keeping images out of git
 
 If `Assets/` should live on Google Drive instead, make it a symlink at vault creation:

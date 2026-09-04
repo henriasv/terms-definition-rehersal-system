@@ -28,7 +28,7 @@ export async function saveAsset(bytes: Uint8Array, opts: { slug: string; mime: s
 	const ext = extensionFor(opts.mime, opts.filename);
 	const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 8);
 	const day = (opts.now ?? new Date()).toISOString().slice(0, 10).replace(/-/g, '');
-	const prefix = opts.slug.replace(/[^a-z0-9-]/g, '') || 'asset';
+	const prefix = opts.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'asset';
 	const dir = assetsDir(vault);
 	await fs.mkdir(dir, { recursive: true });
 	const existing = (await fs.readdir(dir)).find((n) => n.includes(`-${hash}.`));

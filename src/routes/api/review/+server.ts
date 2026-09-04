@@ -10,7 +10,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const body = await request.json();
 		const key = String(body.card ?? '');
 		const rating = Number(body.rating);
-		if (!/^[a-z0-9-]+#(fwd|rev)$/.test(key)) return json({ error: 'bad card key' }, { status: 400 });
+		if (!/^[^#/\\]+#(fwd|rev)$/.test(key)) return json({ error: 'bad card key' }, { status: 400 });
 		if (![1, 2, 3, 4].includes(rating)) return json({ error: 'rating must be 1..4' }, { status: 400 });
 		await readTerm(splitKey(key).slug); // 404 if the term vanished
 		const cfg = loadConfig();

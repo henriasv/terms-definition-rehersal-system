@@ -6,6 +6,7 @@
 	import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 	import { markdown } from '@codemirror/lang-markdown';
 	import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+	import { autocompletion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 	import { Tag, tags as t } from '@lezer/highlight';
 	import type { InlineContext, MarkdownConfig } from '@lezer/markdown';
 
@@ -13,8 +14,9 @@
 		value = $bindable(''),
 		onsave,
 		onfiles,
-		placeholder = ''
-	}: { value?: string; onsave?: () => void; onfiles?: (files: File[]) => void; placeholder?: string } = $props();
+		placeholder = '',
+		linkTargets = [] as string[]
+	}: { value?: string; onsave?: () => void; onfiles?: (files: File[]) => void; placeholder?: string; linkTargets?: string[] } = $props();
 
 	let host: HTMLDivElement | undefined = $state();
 	let view: EditorView | undefined;
@@ -102,6 +104,19 @@
 		]
 	};
 
+	/** After `[[`, offer term names and aliases; accepting one closes the link. */
+	function wikiCompletion(ctx: CompletionContext): CompletionResult | null {
+		const m = ctx.matchBefore(/\[\[([^\]\n]*)$/);
+		if (!m) return null;
+		const after = ctx.state.doc.sliceString(ctx.pos, ctx.pos + 2);
+		const close = after === ']]' ? '' : ']]';
+		return {
+			from: m.from + 2,
+			options: linkTargets.map((t) => ({ label: t, type: 'text', apply: t + close })),
+			validFor: /^[^\]\n]*$/
+		};
+	}
+
 	function theme(dark: boolean): Extension {
 		return EditorView.theme(
 			{
@@ -113,7 +128,9 @@
 				'.cm-activeLine': { background: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
 				'.cm-cursor': { borderLeftColor: 'var(--fg)' },
 				'&.cm-focused .cm-selectionBackground, .cm-selectionBackground': { background: 'color-mix(in srgb, var(--accent) 25%, transparent)' },
-				'.cm-placeholder': { color: 'var(--muted)' }
+				'.cm-placeholder': { color: 'var(--muted)' },
+				'.cm-tooltip': { background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '8px', color: 'var(--fg)' },
+				'.cm-tooltip-autocomplete ul li[aria-selected]': { background: 'var(--accent)', color: 'var(--accent-fg)' }
 			},
 			{ dark }
 		);
@@ -132,6 +149,7 @@
 					EditorView.lineWrapping,
 					markdown({ extensions: [mathAndLinks] }),
 					syntaxHighlighting(highlight),
+					autocompletion({ override: [wikiCompletion], icons: false }),
 					theme(dark),
 					keymap.of([
 						{ key: 'Mod-s', run: () => (onsave?.(), true) },
@@ -168,7 +186,9 @@
 	$effect(() => {
 		const v = value;
 		if (view && v !== view.state.doc.toString()) {
-			view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: v } });
+			const { anchor, head } = view.state.selection.main;
+			const clamp = (n: number) => Math.min(n, v.length);
+			view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: v }, selection: { anchor: clamp(anchor), head: clamp(head) } });
 		}
 	});
 </script>

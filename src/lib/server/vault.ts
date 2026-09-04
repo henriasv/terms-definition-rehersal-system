@@ -2,8 +2,9 @@
  * Filesystem access to the vault. Every write is tempfile + rename.
  */
 import { promises as fs } from 'node:fs';
+import matter from 'gray-matter';
 import path from 'node:path';
-import { newTermFile, parseTerm, patchTermRaw, renameInRaw, slugify, type NewTermInput, type Term, type TermPatch } from '../term.ts';
+import { newTermFile, parseTerm, patchTermRaw, renameInRaw, rewriteLinks, slugify, type NewTermInput, type Term, type TermPatch } from '../term.ts';
 import { parseLog, reduceLog, type LogLine } from '../reviews.ts';
 import { vaultPath } from './config.ts';
 
@@ -30,8 +31,13 @@ export function assetsDir(vault = vaultPath()) {
 export function logPath(vault = vaultPath()) {
 	return path.join(vault, LOG_FILE);
 }
+/** Filenames are normally slugs, but hand-made files (e.g. "Zeta Potential.md") must keep working; only reject path tricks. */
+export function isSafeName(name: string): boolean {
+	return name.length > 0 && !name.includes('/') && !name.includes('\\') && !name.includes('..') && !name.startsWith('.') && !name.includes('#');
+}
+
 export function termPath(slug: string, vault = vaultPath()) {
-	if (!/^[a-z0-9-]+$/.test(slug)) throw new VaultError(`Bad slug "${slug}"`);
+	if (!isSafeName(slug)) throw new VaultError(`Bad term identifier "${slug}"`);
 	return path.join(termsDir(vault), `${slug}.md`);
 }
 
@@ -111,7 +117,21 @@ export async function renameTerm(slug: string, newName: string, vault = vaultPat
 	await atomicWrite(target, raw);
 	await fs.unlink(termPath(slug, vault));
 	await appendLog({ t: new Date().toISOString(), event: 'rename', from: slug, to: newSlug }, vault);
+	await rewriteLinksEverywhere({ term: old.fm.term, slug }, newName.trim(), vault);
 	return parseTerm(newSlug, raw);
+}
+
+/** After a rename: point `[[old name]]` / `[[old-slug]]` links in every other term at the new name. */
+export async function rewriteLinksEverywhere(oldTerm: { term: string; slug: string }, newName: string, vault = vaultPath()): Promise<string[]> {
+	const changed: string[] = [];
+	for (const t of await listTerms(vault)) {
+		if (t.slug === oldTerm.slug || t.slug === slugify(newName)) continue;
+		const body = rewriteLinks(t.body, oldTerm, newName);
+		if (body === null) continue;
+		await atomicWrite(termPath(t.slug, vault), matter.stringify(body, matter(t.raw).data));
+		changed.push(t.slug);
+	}
+	return changed;
 }
 
 /**
@@ -140,7 +160,9 @@ export async function saveTerm(slug: string, patch: TermPatch, vault = vaultPath
 	await atomicWrite(target, out.raw);
 	await fs.unlink(termPath(slug, vault));
 	await appendLog({ t: new Date().toISOString(), event: 'rename', from: slug, to: out.slug }, vault);
-	return { term: parseTerm(out.slug, out.raw), renamed: true };
+	const term = parseTerm(out.slug, out.raw);
+	await rewriteLinksEverywhere({ term: old.fm.term, slug }, term.fm.term, vault);
+	return { term, renamed: true };
 }
 
 export async function deleteTerm(slug: string, vault = vaultPath()): Promise<void> {
@@ -169,6 +191,16 @@ export async function cardStates(vault = vaultPath()) {
 export async function appendLog(line: LogLine, vault = vaultPath()) {
 	await fs.mkdir(vault, { recursive: true });
 	await fs.appendFile(logPath(vault), JSON.stringify(line) + '\n');
+}
+
+export async function deleteAsset(name: string, vault = vaultPath()): Promise<void> {
+	if (name.includes('/') || name.includes('..') || name.startsWith('.')) throw new VaultError('Bad asset name', 400);
+	try {
+		await fs.unlink(path.join(assetsDir(vault), name));
+	} catch (e) {
+		if ((e as NodeJS.ErrnoException).code === 'ENOENT') throw new VaultError(`No asset "${name}"`, 404);
+		throw e;
+	}
 }
 
 export async function listAssets(vault = vaultPath()): Promise<Set<string>> {

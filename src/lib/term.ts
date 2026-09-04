@@ -3,6 +3,7 @@
  * No filesystem access here so the CLI, server and tests share it.
  */
 import matter from 'gray-matter';
+import { scanMath } from './math.ts';
 
 export type MathDialect = 'latex' | 'typst';
 
@@ -47,18 +48,32 @@ const CHAR_MAP: Record<string, string> = { æ: 'ae', ø: 'o', å: 'a', ß: 'ss',
 /** `smiles:<token>` inside a name or alias draws a structure; the token runs to the next space. */
 export const SMILES_TOKEN = /smiles:(\S+)/gi;
 
-/**
- * A name or alias without rendering markup: SMILES tokens dropped, math kept as
- * its bare text (`$\lambda_D$` → `lambda_D`). Used for slugs, titles and search.
- */
-export function plainName(text: string): string {
-	return text
-		.replace(SMILES_TOKEN, '')
-		.replace(/\$+/g, '')
-		.replace(/\\[a-zA-Z]+\s?/g, (m) => m.slice(1))
-		.replace(/[{}]/g, '')
+/** LaTeX commands that only format their argument; dropped from plain names. */
+const LATEX_WRAPPERS = /\\(mathrm|mathbf|mathit|mathsf|mathtt|mathcal|mathbb|mathfrak|mathscr|boldsymbol|bm|text|textrm|textbf|textit|textsf|texttt|mbox|operatorname|ce|pu|underline|overline|widehat|widetilde|hat|vec|bar|tilde|dot|ddot|left|right|displaystyle|textstyle|scriptstyle|big|Big|bigl|bigr|Bigl|Bigr)\b\s*/g;
+/** typst functions that only format their argument. */
+const TYPST_WRAPPERS = /\b(upright|bold|italic|sans|serif|mono|cal|bb|frak|text|op|display|inline|script|sscript)\(/g;
+
+function plainMath(src: string): string {
+	return src
+		.replace(LATEX_WRAPPERS, '')
+		.replace(/\\([a-zA-Z]+)(?=\\[a-zA-Z])/g, '$1 ')
+		.replace(/\\([a-zA-Z]+)/g, '$1')
+		.replace(TYPST_WRAPPERS, '(')
+		.replace(/[{}()]/g, '')
 		.replace(/\s+/g, ' ')
 		.trim();
+}
+
+/**
+ * A name or alias without rendering markup: SMILES tokens dropped, math reduced to
+ * its bare symbols (`$\\mathrm{p}K_a$` → `pK_a`, `$\\lambda_D$` → `lambda_D`).
+ * Used for slugs, browser titles and search.
+ */
+export function plainName(text: string): string {
+	let out = text.replace(SMILES_TOKEN, '');
+	const segs = scanMath(out);
+	for (let i = segs.length - 1; i >= 0; i--) out = out.slice(0, segs[i].start) + plainMath(segs[i].src) + out.slice(segs[i].end);
+	return out.replace(/\s+/g, ' ').trim();
 }
 
 /** Deterministic, filename-safe identifier derived from the term name. */
@@ -164,7 +179,7 @@ export function todayISO(now = new Date()): string {
 export function newTermFile(input: NewTermInput, now = new Date()): { slug: string; raw: string } {
 	const name = input.term.trim();
 	const slug = slugify(name);
-	if (!slug) throw new Error(`Cannot derive a slug from "${input.term}"`);
+	if (!slug) throw new Error(noSlugMessage(name));
 	const data: Record<string, unknown> = {
 		term: name,
 		aliases: normaliseAliases(input.aliases ?? []),
@@ -187,6 +202,47 @@ export function renameInRaw(raw: string, newName: string): string {
 	let body = parsed.content;
 	if (oldName) body = body.replace(new RegExp(`^# ${escapeRegExp(oldName)}\\s*$`, 'm'), `# ${newName.trim()}`);
 	return matter.stringify(body, data);
+}
+
+export function noSlugMessage(name: string): string {
+	return `"${name}" has no plain text to build a filename from. Give the term a text name; math and smiles: tokens alone are not enough.`;
+}
+
+/** Body with one `## Heading` section (heading and content) removed. */
+export function withoutSection(body: string, heading: string): string {
+	const sections = findSections(body);
+	const s = sections.find((x) => x.heading.toLowerCase() === heading.toLowerCase());
+	if (!s) return body;
+	const headingStart = body.lastIndexOf('\n', s.start - 2) + 1;
+	return (body.slice(0, headingStart) + body.slice(s.end)).replace(/\n{3,}/g, '\n\n');
+}
+
+/** Everything a `[[link]]` may point at: names, aliases and slugs. */
+export function linkTargets(terms: Term[]): string[] {
+	const out = new Set<string>();
+	for (const t of terms) {
+		out.add(t.fm.term);
+		for (const a of t.fm.aliases ?? []) out.add(a);
+	}
+	return [...out].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+const WIKILINK_ALL = /(!?)\[\[([^\]|#]+)((?:#[^\]|]*)?(?:\|[^\]]*)?)\]\]/g;
+
+/**
+ * Rewrite `[[old]]` links (by old name or old slug, case-insensitive) to the new name.
+ * Aliases keep working unchanged, so they are left alone. Returns the new body or null.
+ */
+export function rewriteLinks(body: string, oldTerm: { term: string; slug: string }, newName: string): string | null {
+	const targets = new Set([oldTerm.term.toLowerCase(), oldTerm.slug]);
+	let changed = false;
+	const out = body.replace(WIKILINK_ALL, (m, bang: string, target: string, tail: string) => {
+		if (bang) return m;
+		if (!targets.has(target.trim().toLowerCase())) return m;
+		changed = true;
+		return `[[${newName}${tail}]]`;
+	});
+	return changed ? out : null;
 }
 
 export function escapeRegExp(s: string): string {
@@ -267,6 +323,6 @@ export function patchTermRaw(raw: string, patch: TermPatch): { raw: string; slug
 	const rest = patch.body !== undefined ? patch.body : splitTitle(parsed.content).rest;
 	const body = joinTitle(title, rest);
 	const slug = slugify(title);
-	if (!slug) throw new Error(`Cannot derive a slug from "${title}"`);
+	if (!slug) throw new Error(noSlugMessage(title));
 	return { raw: matter.stringify(body, data), slug };
 }

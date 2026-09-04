@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
+	import { beforeNavigate, goto, invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { api } from '$lib/client/api';
 	import ChipsInput from '$lib/components/ChipsInput.svelte';
@@ -61,9 +61,20 @@
 		});
 	});
 
-	// Live preview, debounced.
+	// Leaving with unsaved edits asks first (in-app navigation and tab close alike).
+	beforeNavigate(({ cancel, willUnload }) => {
+		if (!dirty) return;
+		if (willUnload) {
+			cancel();
+			return;
+		}
+		if (!confirm('Discard unsaved changes?')) cancel();
+	});
+
+	// Live preview, debounced; responses that arrive out of order are dropped.
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let mounted = false;
+	let previewSeq = 0;
 	$effect(() => {
 		const req = { body, math: meta.math, term: meta.term, aliases: [...meta.aliases] };
 		if (!mounted) {
@@ -74,8 +85,10 @@
 		timer = setTimeout(() => preview(req), 350);
 	});
 	async function preview(req: { body: string; math: 'latex' | 'typst'; term: string; aliases: string[] }) {
+		const seq = ++previewSeq;
 		try {
 			const r = await api<{ html: string; errors: typeof previewErrors; defined: boolean; termHtml: string; aliasesHtml: string[] }>('/api/render', { method: 'POST', json: req });
+			if (seq !== previewSeq) return;
 			html = r.html;
 			termHtml = r.termHtml;
 			aliasesHtml = r.aliasesHtml;
@@ -96,6 +109,7 @@
 		busy = true;
 		try {
 			const r = await api<{ term: { slug: string }; renamed: boolean }>(`/api/terms/${loadedSlug}`, { method: 'PUT', json: { ...meta, body } });
+			savedKey = snapshot(meta, body);
 			if (r.renamed) {
 				await goto(`/terms/${r.term.slug}`, { invalidateAll: true });
 				say('Saved; file renamed');
@@ -140,7 +154,7 @@
 </script>
 
 <svelte:head><title>{data.term.plain}</title></svelte:head>
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} onbeforeunload={(e) => { if (dirty) e.preventDefault(); }} />
 <main class="wide fill">
 	<div class="row" style="margin-bottom:0.8rem">
 		<h1 style="margin:0"><Rendered html={termHtml} inline /></h1>
@@ -189,7 +203,7 @@
 	{/if}
 
 	<div class="editor grow">
-		<CodeEditor bind:this={editor} bind:value={body} onsave={save} onfiles={upload} />
+		<CodeEditor bind:this={editor} bind:value={body} onsave={save} onfiles={upload} linkTargets={data.linkTargets} />
 		<div class="panel preview">
 			{#if aliasesHtml.length}
 				<p class="aliases-line small muted">{#each aliasesHtml as a, i (i)}<Rendered html={a} inline />{/each}</p>

@@ -30,6 +30,7 @@ function expand(p: string): string {
 
 export interface VaultConfig extends SchedulerConfig {
 	typstBin: string;
+	optimizedAt?: string;
 }
 
 export function loadConfig(vault = vaultPath()): VaultConfig {

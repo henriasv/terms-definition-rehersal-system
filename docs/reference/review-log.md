@@ -24,6 +24,12 @@ Rename (written by `terms rename` and the Rename button; moves both cards' histo
 {"t":"…","event":"rename","from":"old-slug","to":"new-slug"}
 ```
 
+Undo (written by the Undo button / `U` key; reverts the card's most recent review):
+
+```json
+{"t":"…","event":"undo","card":"salicylic-acid#fwd"}
+```
+
 Reset (forget a card; write it by hand):
 
 ```json

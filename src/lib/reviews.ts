@@ -40,7 +40,12 @@ export interface ResetLine {
 	event: 'reset';
 	card: CardKey;
 }
-export type LogLine = ReviewLine | RenameLine | ResetLine;
+export interface UndoLine {
+	t: string;
+	event: 'undo';
+	card: CardKey;
+}
+export type LogLine = ReviewLine | RenameLine | ResetLine | UndoLine;
 
 export interface SchedulerConfig {
 	requestRetention: number;
@@ -48,6 +53,8 @@ export interface SchedulerConfig {
 	newPerSession: number;
 	/** Cards due within this many minutes count as due (keeps learning steps inside a session). */
 	lookaheadMinutes: number;
+	/** FSRS weights; omit for the defaults. Written by `terms optimize`. */
+	w?: number[];
 }
 
 export const DEFAULT_CONFIG: SchedulerConfig = {
@@ -114,34 +121,84 @@ export function parseLog(text: string): { lines: LogLine[]; bad: number[] } {
 	return { lines, bad };
 }
 
-/** Current card state per key, following renames and resets. */
+/** Current card state per key, following renames, resets and undos. */
 export function reduceLog(lines: LogLine[]): Map<CardKey, Card> {
-	const states = new Map<CardKey, Card>();
+	return reduceLogWithHistory(lines).states;
+}
+
+/** Like reduceLog, also returning the per-card stack of states (last = current). */
+export function reduceLogWithHistory(lines: LogLine[]): { states: Map<CardKey, Card>; history: Map<CardKey, Card[]> } {
+	const history = new Map<CardKey, Card[]>();
 	for (const l of lines) {
 		if ('event' in l) {
 			if (l.event === 'rename') {
 				for (const dir of ['fwd', 'rev'] as Direction[]) {
 					const from = cardKey(l.from, dir);
-					const to = cardKey(l.to, dir);
-					const s = states.get(from);
-					if (s) {
-						states.delete(from);
-						states.set(to, s);
+					const h = history.get(from);
+					if (h) {
+						history.delete(from);
+						history.set(cardKey(l.to, dir), h);
 					}
 				}
 			} else if (l.event === 'reset') {
-				states.delete(l.card);
+				history.delete(l.card);
+			} else if (l.event === 'undo') {
+				const h = history.get(l.card);
+				if (h) {
+					h.pop();
+					if (!h.length) history.delete(l.card);
+				}
 			}
 			continue;
 		}
-		states.set(l.card, reviveCard(l.state));
+		const h = history.get(l.card) ?? [];
+		h.push(reviveCard(l.state));
+		history.set(l.card, h);
 	}
-	return states;
+	const states = new Map<CardKey, Card>();
+	for (const [k, h] of history) states.set(k, h[h.length - 1]);
+	return { states, history };
+}
+
+/**
+ * Training data for the FSRS optimiser. fsrs-rs wants one item per *predicted* review:
+ * for a card with reviews r0..rn, the items are [r0,r1], [r0,r1,r2], … each carrying the
+ * rating and the whole-day gap since the previous review. Undone reviews are excluded.
+ */
+export function trainingSet(lines: LogLine[]): { rating: number; deltaT: number }[][] {
+	const perCard = new Map<CardKey, { t: number; rating: number }[]>();
+	for (const l of lines) {
+		if ('event' in l) {
+			if (l.event === 'undo') perCard.get(l.card)?.pop();
+			else if (l.event === 'reset') perCard.delete(l.card);
+			else if (l.event === 'rename') {
+				for (const dir of ['fwd', 'rev'] as Direction[]) {
+					const h = perCard.get(cardKey(l.from, dir));
+					if (h) {
+						perCard.delete(cardKey(l.from, dir));
+						perCard.set(cardKey(l.to, dir), h);
+					}
+				}
+			}
+			continue;
+		}
+		const h = perCard.get(l.card) ?? [];
+		h.push({ t: new Date(l.t).getTime(), rating: l.rating });
+		perCard.set(l.card, h);
+	}
+	const out: { rating: number; deltaT: number }[][] = [];
+	for (const h of perCard.values()) {
+		if (h.length < 2) continue;
+		const seq = h.map((r, i) => ({ rating: r.rating, deltaT: i === 0 ? 0 : Math.round((r.t - h[i - 1].t) / 86400_000) }));
+		for (let i = 2; i <= seq.length; i++) out.push(seq.slice(0, i));
+	}
+	return out;
 }
 
 export function makeParams(cfg: Partial<SchedulerConfig> = {}): FSRSParameters {
 	const c = { ...DEFAULT_CONFIG, ...cfg };
-	return generatorParameters({ request_retention: c.requestRetention, maximum_interval: c.maximumInterval, enable_fuzz: true });
+	const w = Array.isArray(c.w) && c.w.length ? c.w : undefined;
+	return generatorParameters({ request_retention: c.requestRetention, maximum_interval: c.maximumInterval, enable_fuzz: true, ...(w ? { w } : {}) });
 }
 
 export function gradeFromRating(r: number): Grade {

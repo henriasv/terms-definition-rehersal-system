@@ -14,10 +14,14 @@ Forward and reverse cards are independent. Learning to recognise a term and lear
 
 A session is the set of cards due at start time plus a bounded batch of new cards. Learning-step cards (rated Again or Hard moments ago) reappear inside the session when their due time falls within the lookahead window, so a session ends with everything seen at least once at Good or better, or the user leaving.
 
+## Undo
+
+An undo appends an event rather than deleting a line. Replay pops the card's most recent state, so the log stays append-only and a later reader can still see that the rating happened and was withdrawn.
+
 ## Renames
 
 A rename appends an event that redirects the old slug's history to the new one at replay time. Old lines are never rewritten, so the log stays append-only and diffs stay honest.
 
 ## Parameter fitting
 
-FSRS parameters can be optimised from a review history. The log already records ratings, timestamps and answer times in the form the optimiser wants; running it is a future step (see [known limitations](../KNOWN_LIMITATIONS.md)).
+`pnpm terms optimize` fits FSRS weights to the log with the Rust optimiser behind Anki's, and writes them to `config.json`. It needs a few hundred reviews to beat the defaults, so it refuses below that unless overridden.

@@ -9,7 +9,9 @@
 | `todo` | Terms without a definition. |
 | `due [--tag prefix]` | What a review session would contain now. |
 | `lint` | All checks incl. real KaTeX/typst render errors. Exit code 1 if any error-level issue. |
-| `rename <slug> "New name"` | Rewrite `term:` and the H1, move the file, log a rename event. |
+| `rename <slug> "New name"` | Rewrite `term:` and the H1, move the file, log a rename event, and repoint `[[old name]]` / `[[old-slug]]` links in other terms. |
+| `assets [--prune]` | List files in `Assets/` that no term embeds; `--prune` deletes them. |
+| `optimize [--min N]` | Fit FSRS weights to the review log and write them to `config.json`. Refuses below `N` reviews (default 200). |
 | `path` | Print the vault path. |
 
 Output goes to stdout; counts to stderr, so `pnpm -s terms list | wc -l` is exact.

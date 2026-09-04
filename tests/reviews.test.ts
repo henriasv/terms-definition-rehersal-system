@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildQueue, parseLog, reduceLog, review, stats } from '../src/lib/reviews.ts';
+import { buildQueue, parseLog, reduceLog, review, stats, trainingSet } from '../src/lib/reviews.ts';
 import { newTermFile, parseTerm } from '../src/lib/term.ts';
 
 const now = new Date('2026-09-04T10:00:00Z');
@@ -40,5 +40,22 @@ describe('review + log', () => {
 		const states = reduceLog([r.line]);
 		const q = buildQueue([defined], states, { now });
 		expect(q.items.some((i) => i.key === 'a#fwd' && !i.isNew)).toBe(true);
+	});
+});
+
+describe('undo and training set', () => {
+	it('undo pops the last state; training set follows', () => {
+		const r1 = review(undefined, 3, 'a#fwd', now);
+		const later = new Date(now.getTime() + 3 * 86400_000);
+		const r2 = review(r1.card, 1, 'a#fwd', later);
+		const lines = [r1.line, r2.line, { t: later.toISOString(), event: 'undo' as const, card: 'a#fwd' }];
+		const states = reduceLog(lines);
+		expect(states.get('a#fwd')?.reps).toBe(1);
+		expect(trainingSet(lines)).toEqual([]); // one review left: too short to train on
+		const ts = trainingSet([r1.line, r2.line]);
+		expect(ts).toEqual([[{ rating: 3, deltaT: 0 }, { rating: 1, deltaT: 3 }]]);
+		const r3 = review(r2.card, 3, 'a#fwd', new Date(later.getTime() + 86400_000));
+		expect(trainingSet([r1.line, r2.line, r3.line]).map((it) => it.length)).toEqual([2, 3]);
+		expect(reduceLog([r1.line, { t: later.toISOString(), event: 'undo' as const, card: 'a#fwd' }]).has('a#fwd')).toBe(false);
 	});
 });

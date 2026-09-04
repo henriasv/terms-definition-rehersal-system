@@ -4,7 +4,7 @@ import { decorate, fail } from '$lib/server/http';
 import { renderMarkdown } from '$lib/server/render';
 import { cardStates, listTerms } from '$lib/server/vault';
 import { buildQueue, previewIntervals } from '$lib/reviews';
-import { termHasTag } from '$lib/term';
+import { splitTitle, termHasTag, withoutSection } from '$lib/term';
 
 /** ?tag=prefix  → cards to review now, with rendered content. */
 export const GET: RequestHandler = async ({ url }) => {
@@ -22,13 +22,13 @@ export const GET: RequestHandler = async ({ url }) => {
 			if (!rendered.has(it.slug)) {
 				const [d, b, term] = await Promise.all([
 					renderMarkdown(t.definition, { math: t.math, terms }),
-					renderMarkdown(t.body, { math: t.math, terms, stripTitle: true }),
+					renderMarkdown(withoutSection(splitTitle(t.body).rest, 'Definition'), { math: t.math, terms }),
 					decorate(t)
 				]);
 				rendered.set(it.slug, { definition: d.html, body: b.html, term });
 			}
 			const r = rendered.get(it.slug)!;
-			cards.push({ ...it, term: r.term, definitionHtml: r.definition, bodyHtml: r.body, intervals: previewIntervals(states.get(it.key), now, cfg) });
+			cards.push({ ...it, term: r.term, definitionHtml: r.definition, notesHtml: r.body, intervals: previewIntervals(states.get(it.key), now, cfg) });
 		}
 		return json({ cards, counts, lookaheadMinutes: cfg.lookaheadMinutes });
 	} catch (e) {

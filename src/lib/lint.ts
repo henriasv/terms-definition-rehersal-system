@@ -15,6 +15,8 @@ export interface LintIssue {
 	/** 1-based line in the term file, when known. */
 	line?: number;
 	fix?: string;
+	/** For asset issues: the file name under Assets/. */
+	asset?: string;
 }
 
 export interface LintContext {
@@ -40,7 +42,7 @@ export function lintTerm(term: Term, ctx: LintContext): LintIssue[] {
 			slug: term.slug,
 			level: 'warn',
 			code: 'slug-mismatch',
-			message: `Filename slug "${term.slug}" does not match term "${term.fm.term}" (expected "${slugify(term.fm.term)}").`,
+			message: `File "${term.slug}.md" is not the slug of "${term.fm.term}" (expected "${slugify(term.fm.term)}.md"). Everything works, but links by slug and the log key use the filename.`,
 			fix: `terms rename ${term.slug} "${term.fm.term}"`
 		});
 	}
@@ -97,8 +99,18 @@ export function lintTerm(term: Term, ctx: LintContext): LintIssue[] {
 	return issues;
 }
 
+/** Files in Assets/ that no term embeds. */
+export function orphanAssets(ctx: LintContext): string[] {
+	const used = new Set<string>();
+	for (const t of ctx.terms) for (const m of t.body.matchAll(WIKILINK)) if (m[1]) used.add(m[2].trim());
+	return [...ctx.assets].filter((a) => !used.has(a) && !a.startsWith('.')).sort();
+}
+
 export function lintAll(ctx: LintContext): LintIssue[] {
 	const issues: LintIssue[] = [];
+	for (const a of orphanAssets(ctx)) {
+		issues.push({ slug: '', level: 'info', code: 'orphan-asset', asset: a, message: `Assets/${a} is not embedded by any term.`, fix: 'terms assets --prune' });
+	}
 	const seenNames = new Map<string, string>();
 	for (const t of ctx.terms) {
 		issues.push(...lintTerm(t, ctx));

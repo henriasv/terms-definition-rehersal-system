@@ -11,6 +11,7 @@
 | 2 | Hard |
 | 3 | Good |
 | 4 | Easy |
+| U | Undo the last rating (also available after the session ends) |
 
 The buttons show when each rating would bring the card back. Cards rated Again or Hard return later in the same session (anything due within `lookaheadMinutes`, default 20).
 
@@ -24,6 +25,20 @@ Only terms with a non-empty `## Definition` produce cards. Set `reverse: false` 
 ## Tuning
 
 `config.json` in the vault: `requestRetention` (default 0.9), `maximumInterval` (days), `newPerSession`, `lookaheadMinutes`. See [configuration](../reference/config.md).
+
+## Undoing a rating
+
+Press `U` or click *undo last rating*. The log gets an `undo` event for that card, its state reverts to before the rating, and the card comes back up. Only the most recent rating per card can be undone this way.
+
+## Fitting the scheduler to you
+
+Once a few hundred reviews have accumulated:
+
+```bash
+pnpm terms optimize
+```
+
+This fits FSRS weights to your `reviews.jsonl` (via `fsrs-rs-nodejs`) and writes them to `config.json` as `w`. The app picks them up on the next request. Below 200 reviews the command refuses; `--min N` overrides.
 
 ## Resetting a card
 

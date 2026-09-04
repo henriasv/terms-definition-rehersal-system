@@ -24,6 +24,10 @@ Name, aliases, tags, math dialect, source and the reverse-card switch are edited
 
 Create `Terms/<slug>.md` in any editor. The only required frontmatter field is `term:`. See [term file format](../reference/term-file-format.md). The slug must match `slugify(term)`; `pnpm terms lint` tells you if it does not, and `pnpm terms rename` fixes it.
 
+## Linking terms
+
+Type `[[` in the editor and a completion list offers every term name and alias; accepting one closes the link. Renaming a term repoints links that used its old name or slug in other notes; links through an alias keep working as they are.
+
 ## Later: the definition
 
 `pnpm terms todo` lists undefined terms; so does the dashboard. Undefined terms never appear in review, so a half-captured backlog costs nothing.
