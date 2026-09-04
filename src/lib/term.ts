@@ -202,3 +202,63 @@ export function resolveTermLink(target: string, terms: Term[]): Term | undefined
 		terms.find((x) => x.slug === asSlug)
 	);
 }
+
+/** Split a body into its leading `# Title` line (if any) and the rest. */
+export function splitTitle(body: string): { title: string | null; rest: string } {
+	const m = /^\s*# ([^\n]*)\n?/.exec(body);
+	if (!m) return { title: null, rest: body.replace(/^\n+/, '') };
+	return { title: m[1].trim(), rest: body.slice(m[0].length).replace(/^\n+/, '') };
+}
+
+/** Compose the canonical body: blank line, H1, blank line, content. */
+export function joinTitle(title: string, rest: string): string {
+	const content = rest.replace(/^\n+/, '').replace(/\s+$/, '');
+	return `\n# ${title.trim()}\n\n${content}${content ? '\n' : ''}`;
+}
+
+export interface TermPatch {
+	term?: string;
+	aliases?: string[];
+	tags?: string[];
+	math?: MathDialect;
+	smiles?: string | null;
+	reverse?: boolean;
+	source?: string | null;
+	/** Body content without the H1 line. */
+	body?: string;
+}
+
+/**
+ * Apply UI edits to an existing file. Unknown frontmatter fields survive; the H1
+ * follows the term name. Returns the new raw text and the slug the name implies.
+ */
+export function patchTermRaw(raw: string, patch: TermPatch): { raw: string; slug: string } {
+	const parsed = matter(raw);
+	const data: Record<string, unknown> = { ...(parsed.data as Record<string, unknown>) };
+	if (patch.term !== undefined) {
+		const name = patch.term.trim();
+		if (!name) throw new Error('Term name cannot be empty');
+		data.term = name;
+	}
+	if (patch.aliases !== undefined) data.aliases = normaliseAliases(patch.aliases);
+	if (patch.tags !== undefined) data.tags = normaliseTags(patch.tags);
+	if (patch.math !== undefined) data.math = patch.math === 'typst' ? 'typst' : 'latex';
+	if (patch.smiles !== undefined) {
+		if (patch.smiles && patch.smiles.trim()) data.smiles = patch.smiles.trim();
+		else delete data.smiles;
+	}
+	if (patch.reverse !== undefined) {
+		if (patch.reverse === false) data.reverse = false;
+		else delete data.reverse;
+	}
+	if (patch.source !== undefined) {
+		if (patch.source && patch.source.trim()) data.source = patch.source.trim();
+		else delete data.source;
+	}
+	const title = String(data.term ?? '');
+	const rest = patch.body !== undefined ? patch.body : splitTitle(parsed.content).rest;
+	const body = joinTitle(title, rest);
+	const slug = slugify(title);
+	if (!slug) throw new Error(`Cannot derive a slug from "${title}"`);
+	return { raw: matter.stringify(body, data), slug };
+}

@@ -41,6 +41,7 @@ src/lib/math.ts        $…$ scanner and dialect sniffing                (pure)
 src/lib/lint.ts        static checks                                   (pure)
 src/lib/reviews.ts     review log + FSRS scheduling                    (pure)
 src/lib/server/        vault I/O, rendering, typst, assets, lint
+src/lib/components/    CodeMirror editor, chips input, rendered Markdown
 src/routes/            pages and /api endpoints
 scripts/terms.ts       CLI
 setup/init-vault.sh    create a vault

@@ -1,26 +1,35 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { fail, summary } from '$lib/server/http';
 import { renderTerm } from '$lib/server/render';
-import { deleteTerm, listTerms, readTerm, renameTerm, writeTermRaw } from '$lib/server/vault';
+import { deleteTerm, listTerms, readTerm, renameTerm, saveTerm, writeTermRaw } from '$lib/server/vault';
+import { splitTitle, type Term } from '$lib/term';
+
+async function payload(term: Term) {
+	const terms = await listTerms();
+	return { term: { ...summary(term), raw: term.raw, body: splitTitle(term.body).rest }, rendered: await renderTerm(term, terms) };
+}
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
-		const terms = await listTerms();
-		const term = terms.find((t) => t.slug === params.slug) ?? (await readTerm(params.slug!));
-		return json({ term: { ...summary(term), raw: term.raw }, rendered: await renderTerm(term, terms) });
+		return json(await payload(await readTerm(params.slug!)));
 	} catch (e) {
 		return fail(e);
 	}
 };
 
-/** Body: { raw } — the whole file. */
+/**
+ * Body: { raw }  — replace the whole file, or
+ *       { term?, aliases?, tags?, math?, smiles?, reverse?, source?, body? } — patch fields
+ *       (body is the Markdown after the H1). A changed name moves the file; `renamed` says so.
+ */
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
-		const { raw } = await request.json();
-		if (typeof raw !== 'string') return json({ error: 'raw must be a string' }, { status: 400 });
-		const term = await writeTermRaw(params.slug!, raw);
-		const terms = await listTerms();
-		return json({ term: { ...summary(term), raw: term.raw }, rendered: await renderTerm(term, terms) });
+		const data = await request.json();
+		if (typeof data.raw === 'string') {
+			return json({ ...(await payload(await writeTermRaw(params.slug!, data.raw))), renamed: false });
+		}
+		const { term, renamed } = await saveTerm(params.slug!, data);
+		return json({ ...(await payload(term)), renamed });
 	} catch (e) {
 		return fail(e);
 	}

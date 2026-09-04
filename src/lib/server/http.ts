@@ -18,7 +18,8 @@ export function summary(t: import('../term.ts').Term) {
 		math: t.math,
 		added: t.fm.added ?? null,
 		smiles: t.fm.smiles ?? null,
-		reverse: t.fm.reverse !== false
+		reverse: t.fm.reverse !== false,
+		source: typeof t.fm.source === 'string' ? t.fm.source : null
 	};
 }
 export type TermSummary = ReturnType<typeof summary>;

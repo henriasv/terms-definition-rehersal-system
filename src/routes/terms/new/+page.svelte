@@ -2,9 +2,11 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api } from '$lib/client/api';
+	import ChipsInput from '$lib/components/ChipsInput.svelte';
+	let { data } = $props();
 	let term = $state(page.url.searchParams.get('name') ?? '');
-	let tags = $state('');
-	let aliases = $state('');
+	let tags = $state<string[]>([]);
+	let aliases = $state<string[]>([]);
 	let math = $state<'latex' | 'typst'>('latex');
 	let smiles = $state('');
 	let definition = $state('');
@@ -25,12 +27,12 @@
 	<h1>New term</h1>
 	<form class="panel grid" style="gap:0.8rem" onsubmit={submit}>
 		<label class="field">Term <input type="text" bind:value={term} required /></label>
-		<label class="field">Aliases (comma separated) <input type="text" bind:value={aliases} /></label>
-		<label class="field">Tags (space separated, nest with /) <input type="text" bind:value={tags} placeholder="chemistry/surface" /></label>
+		<label class="field">Aliases <ChipsInput bind:values={aliases} placeholder="other names, Enter to add" /></label>
+		<label class="field">Tags <ChipsInput bind:values={tags} suggestions={data.allTags} placeholder="chemistry/surface" /></label>
 		<label class="field">Math dialect for $…$
 			<select bind:value={math}><option value="latex">LaTeX (KaTeX)</option><option value="typst">typst</option></select>
 		</label>
-		<label class="field">SMILES (optional) <input type="text" class="mono" bind:value={smiles} placeholder="OC(=O)c1ccccc1" /></label>
+		<label class="field">SMILES (optional) <input type="text" class="mono" bind:value={smiles} placeholder="OC(=O)c1ccccc1" spellcheck="false" /></label>
 		<label class="field">Definition (optional, Markdown) <textarea rows="5" bind:value={definition}></textarea></label>
 		{#if err}<div class="banner err">{err}</div>{/if}
 		<div class="row"><button class="btn primary" type="submit">Create</button><a class="btn" href="/terms">Cancel</a></div>

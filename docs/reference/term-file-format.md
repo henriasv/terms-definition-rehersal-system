@@ -19,7 +19,7 @@ One file per term: `Terms/<slug>.md`. YAML frontmatter, then Markdown. The canon
 | `added` | ISO date | no | Set on creation. Orders new cards. |
 | `source` | string | no | Free text, e.g. a literature-vault citekey. |
 
-Unknown fields are preserved.
+Unknown fields are preserved. The app edits these through form fields and rewrites the frontmatter on save; the H1 in the body is kept equal to `term`.
 
 ## Body
 

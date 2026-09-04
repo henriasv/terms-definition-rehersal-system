@@ -12,6 +12,7 @@
 	--err: #b3261e;
 	--info: #4b5c6b;
 	--soft: #f0eee8;
+	--math: #7a3e9d;
 	--mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 	--serif: Charter, 'Iowan Old Style', Georgia, serif;
@@ -30,6 +31,7 @@
 		--err: #f28b82;
 		--info: #9fb3c4;
 		--soft: #24262d;
+		--math: #c79bea;
 	}
 }
 * { box-sizing: border-box; }
@@ -113,6 +115,8 @@ a.tag:hover { color: var(--fg); text-decoration: none; border-color: var(--muted
 pre.math-error { padding: 0.6rem 0.8rem; }
 
 /* Editor */
+.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.7rem 1rem; align-items: end; margin-bottom: 1rem; }
+label.check { display: flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; padding-bottom: 0.5rem; }
 .editor { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; min-height: 60vh; }
 @media (max-width: 900px) { .editor { grid-template-columns: 1fr; } }
 textarea.raw { width: 100%; min-height: 60vh; resize: vertical; line-height: 1.5; tab-size: 2; padding: 0.8rem; }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getSection, newTermFile, parseTerm, renameInRaw, resolveTermLink, setSection, slugify, tagMatches } from '../src/lib/term.ts';
+import { getSection, joinTitle, newTermFile, parseTerm, patchTermRaw, renameInRaw, resolveTermLink, setSection, slugify, splitTitle, tagMatches } from '../src/lib/term.ts';
 
 describe('slugify', () => {
 	it('lowercases and dashes', () => {
@@ -68,5 +68,37 @@ describe('links and tags', () => {
 		expect(tagMatches('chemistry/surface', 'chemistry')).toBe(true);
 		expect(tagMatches('chemistry', 'chemistry/surface')).toBe(false);
 		expect(tagMatches('chemistryx', 'chemistry')).toBe(false);
+	});
+});
+
+describe('patchTermRaw', () => {
+	const base = newTermFile({ term: 'Old name', tags: ['a'], aliases: ['x'] }).raw + 'extra: keep me\n';
+	it('updates fields, keeps unknown ones, follows the H1', () => {
+		const raw = `---\nterm: Old name\ntags:\n  - a\nextra: keep me\n---\n\n# Old name\n\n## Definition\n\nd\n`;
+		const out = patchTermRaw(raw, { term: 'New name', tags: ['#B/c'], smiles: 'CC', reverse: false, body: '## Definition\n\nnew def' });
+		expect(out.slug).toBe('new-name');
+		const t = parseTerm(out.slug, out.raw);
+		expect(t.fm.term).toBe('New name');
+		expect(t.fm.tags).toEqual(['b/c']);
+		expect(t.fm.smiles).toBe('CC');
+		expect(t.fm.reverse).toBe(false);
+		expect((t.fm as Record<string, unknown>).extra).toBe('keep me');
+		expect(t.body.startsWith('\n# New name\n\n## Definition')).toBe(true);
+		expect(t.definition).toBe('new def');
+	});
+	it('clears optional fields when emptied', () => {
+		const raw = `---\nterm: T\nsmiles: CC\nreverse: false\nsource: s\n---\n\n# T\n\n## Definition\n`;
+		const t = parseTerm('t', patchTermRaw(raw, { smiles: '', reverse: true, source: null }).raw);
+		expect(t.fm.smiles).toBeUndefined();
+		expect(t.fm.reverse).toBeUndefined();
+		expect(t.fm.source).toBeUndefined();
+		void base;
+	});
+	it('splitTitle / joinTitle round-trip', () => {
+		const { title, rest } = splitTitle('\n# Foo\n\n## Definition\n\nx\n');
+		expect(title).toBe('Foo');
+		expect(rest).toBe('## Definition\n\nx\n');
+		expect(joinTitle('Foo', rest)).toBe('\n# Foo\n\n## Definition\n\nx\n');
+		expect(splitTitle('no title').title).toBeNull();
 	});
 });

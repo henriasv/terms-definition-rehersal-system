@@ -6,6 +6,7 @@ import { cardStates, listAssets, listTerms } from '$lib/server/vault';
 import { lintTerm, type LintIssue } from '$lib/lint';
 import { cardKey } from '$lib/reviews';
 import { vaultPath } from '$lib/server/config';
+import { splitTitle } from '$lib/term';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const [terms, assets, states] = await Promise.all([listTerms(), listAssets(), cardStates()]);
@@ -17,11 +18,14 @@ export const load: PageServerLoad = async ({ params }) => {
 		...rendered.errors.map((e) => ({ slug: term.slug, level: 'error' as const, code: `${e.kind}-error`, line: e.line, message: `${e.kind === 'latex' ? 'KaTeX' : 'typst'}: ${e.message.split('\n')[0]}` }))
 	];
 	const due = (dir: 'fwd' | 'rev') => states.get(cardKey(term.slug, dir))?.due.toISOString() ?? null;
+	const allTags = [...new Set(terms.flatMap((t) => t.fm.tags ?? []))].sort();
 	return {
-		term: { ...summary(term), raw: term.raw },
+		term: summary(term),
+		body: splitTitle(term.body).rest,
 		rendered: { definition: rendered.definition, body: rendered.body },
 		issues,
 		cards: { fwd: due('fwd'), rev: due('rev') },
-		file: `${vaultPath()}/Terms/${term.slug}.md`
+		file: `${vaultPath()}/Terms/${term.slug}.md`,
+		allTags
 	};
 };

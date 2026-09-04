@@ -3,7 +3,7 @@
  */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { newTermFile, parseTerm, renameInRaw, slugify, type NewTermInput, type Term } from '../term.ts';
+import { newTermFile, parseTerm, patchTermRaw, renameInRaw, slugify, type NewTermInput, type Term, type TermPatch } from '../term.ts';
 import { parseLog, reduceLog, type LogLine } from '../reviews.ts';
 import { vaultPath } from './config.ts';
 
@@ -112,6 +112,35 @@ export async function renameTerm(slug: string, newName: string, vault = vaultPat
 	await fs.unlink(termPath(slug, vault));
 	await appendLog({ t: new Date().toISOString(), event: 'rename', from: slug, to: newSlug }, vault);
 	return parseTerm(newSlug, raw);
+}
+
+/**
+ * Apply UI edits. If the name changed, the file moves to the new slug and a
+ * rename event is logged so review history follows.
+ */
+export async function saveTerm(slug: string, patch: TermPatch, vault = vaultPath()): Promise<{ term: Term; renamed: boolean }> {
+	const old = await readTerm(slug, vault);
+	let out: { raw: string; slug: string };
+	try {
+		out = patchTermRaw(old.raw, patch);
+	} catch (e) {
+		throw new VaultError((e as Error).message, 400);
+	}
+	if (out.slug === slug) {
+		await atomicWrite(termPath(slug, vault), out.raw);
+		return { term: parseTerm(slug, out.raw), renamed: false };
+	}
+	const target = termPath(out.slug, vault);
+	try {
+		await fs.access(target);
+		throw new VaultError(`A term with slug "${out.slug}" already exists`, 409);
+	} catch (e) {
+		if (e instanceof VaultError) throw e;
+	}
+	await atomicWrite(target, out.raw);
+	await fs.unlink(termPath(slug, vault));
+	await appendLog({ t: new Date().toISOString(), event: 'rename', from: slug, to: out.slug }, vault);
+	return { term: parseTerm(out.slug, out.raw), renamed: true };
 }
 
 export async function deleteTerm(slug: string, vault = vaultPath()): Promise<void> {
