@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { scanMath, sniffDialect } from '../src/lib/math.ts';
+import { normaliseMathDelimiters, scanMath, sniffDialect } from '../src/lib/math.ts';
 import { lintAll } from '../src/lib/lint.ts';
 import { newTermFile, parseTerm } from '../src/lib/term.ts';
 
 describe('scanMath', () => {
+	it('recognizes imported LaTeX delimiters and preserves source line offsets', () => {
+		const text = 'Ion \\(\\text{Na}^+\\)\n\\[\na^2\n\\]\n$x$';
+		const segs = scanMath(text);
+		expect(segs.map(s => [s.kind, s.src.trim(), s.line])).toEqual([
+			['inline', '\\text{Na}^+', 1], ['display', 'a^2', 2], ['inline', 'x', 5]
+		]);
+		expect(segs.map(s => text.slice(s.start, s.end))).toEqual(['\\(\\text{Na}^+\\)', '\\[\na^2\n\\]', '$x$']);
+	});
+	it('normalizes imported math while leaving code and escaped delimiters alone', () => {
+		const text = 'Ion \\(Na^+\\), `\\(code\\)`, \\\\(literal\\)\n\n```latex\n\\[code\\]\n```\n\\[x^2\\]';
+		expect(normaliseMathDelimiters(text)).toBe('Ion $Na^+$, `\\(code\\)`, \\\\(literal\\)\n\n```latex\n\\[code\\]\n```\n$$x^2$$');
+	});
 	it('finds inline and display', () => {
 		const segs = scanMath('a $x$ b\n$$\ny\n$$\nc');
 		expect(segs.map((s) => [s.kind, s.src.trim(), s.line])).toEqual([

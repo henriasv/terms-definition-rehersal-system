@@ -1,11 +1,12 @@
 import { lintAll, type LintIssue } from '../lint.ts';
 import { listAssets, listTerms } from './vault.ts';
 import { renderMarkdown } from './render.ts';
+import { listPapers } from './papers.ts';
 
 /** Static checks plus real render errors from KaTeX and the typst CLI. */
 export async function lintVault(): Promise<LintIssue[]> {
-	const [terms, assets] = await Promise.all([listTerms(), listAssets()]);
-	const issues = lintAll({ terms, assets });
+	const [terms, assets, papers] = await Promise.all([listTerms(), listAssets(), listPapers()]);
+	const issues = lintAll({ terms, assets, referencedAssets: papers.map(p=>p.asset) });
 	for (const t of terms) {
 		const { errors } = await renderMarkdown(t.body, { math: t.math, terms, lineOffset: t.bodyLine - 1 });
 		for (const e of errors) {

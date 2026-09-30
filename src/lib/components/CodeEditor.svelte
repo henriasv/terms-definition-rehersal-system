@@ -75,6 +75,15 @@
 				name: 'InlineMath',
 				before: 'Escape',
 				parse(cx: InlineContext, next: number, pos: number) {
+					if (next === BACKSLASH && (cx.char(pos + 1) === 40 || cx.char(pos + 1) === 91)) {
+						const closeMark = cx.char(pos + 1) === 40 ? 41 : 93;
+						for (let i = pos + 2; i < cx.end; i++) {
+							if (cx.char(i) !== BACKSLASH) continue;
+							if (cx.char(i + 1) === closeMark) return cx.addElement(cx.elt('InlineMath', pos, i + 2));
+							i++;
+						}
+						return -1;
+					}
 					if (next !== DOLLAR) return -1;
 					const display = cx.char(pos + 1) === DOLLAR;
 					const open = display ? 2 : 1;

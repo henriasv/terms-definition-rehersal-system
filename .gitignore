@@ -15,5 +15,12 @@ build/
 .idea/
 # Per-machine setup state (vault path) written by setup scripts.
 setup/.local.conf
+.venv/
+setup/.notebooklm/
+setup/.phone-connection.json
+.notebooklm-venv/
+__pycache__/
+# The hosted companion has its own Sites source repository.
+/phone/
 # Seeded design canvas (regenerated from design/*.dc.html)
 design/terms-rehearsal-screens.html

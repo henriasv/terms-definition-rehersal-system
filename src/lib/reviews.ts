@@ -22,6 +22,8 @@ export interface SerializedCard {
 }
 
 export interface ReviewLine {
+	/** Stable ID used to import a phone review exactly once. */
+	syncId?: string;
 	t: string;
 	card: CardKey;
 	rating: 1 | 2 | 3 | 4;

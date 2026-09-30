@@ -6,7 +6,7 @@
 
 | Key | Action |
 |---|---|
-| Space / Enter | Show answer; a second press rates Good |
+| Space / Enter | Show answer |
 | 1 | Again — back within a minute |
 | 2 | Hard |
 | 3 | Good |
@@ -14,6 +14,10 @@
 | U | Undo the last rating (also available after the session ends) |
 
 The buttons show when each rating would bring the card back. Cards rated Again or Hard return later in the same session (anything due within `lookaheadMinutes`, default 20).
+
+Long questions use a smaller reading size. The card contents scroll inside the card, while the answer and rating controls stay visible. Space reveals without assigning a rating; use 1–4 to rate deliberately. Shortcuts do not override focused buttons, links, fields, or expandable notes. Use **End session** to stop; saved ratings remain recorded. **Edit card** opens separately so the session stays in place.
+
+Paper collections appear by title in the collection selector. **Back to paper** returns to their suggestions and source PDF.
 
 ## What is in the queue
 

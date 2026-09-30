@@ -1,11 +1,11 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { loadConfig } from '$lib/server/config';
 import { fail } from '$lib/server/http';
-import { appendLog, cardStates, readTerm } from '$lib/server/vault';
+import { appendLog, cardStates, readTerm, withReviewWrite } from '$lib/server/vault';
 import { previewIntervals, review, splitKey, type ReviewLine } from '$lib/reviews';
 
 /** Body: { card: "slug#fwd", rating: 1..4, ms? } → appends to reviews.jsonl. */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request }) => withReviewWrite(async () => {
 	try {
 		const body = await request.json();
 		const key = String(body.card ?? '');
@@ -22,4 +22,4 @@ export const POST: RequestHandler = async ({ request }) => {
 	} catch (e) {
 		return fail(e);
 	}
-};
+});

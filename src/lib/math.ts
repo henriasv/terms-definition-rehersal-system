@@ -1,5 +1,5 @@
 /**
- * Scanner for `$...$` and `$$...$$` math segments in Markdown, skipping code.
+ * Scanner for dollar and LaTeX \(...\) / \[...\] math delimiters, skipping code.
  * Shared by the renderer (to swap in rendered output) and the linter.
  */
 export interface MathSegment {
@@ -60,6 +60,24 @@ export function scanMath(text: string): MathSegment[] {
 			continue;
 		}
 		if (ch === '\\') {
+			const open = text[i + 1];
+			if (open === '(' || open === '[') {
+				const limit = open === '[' ? n : (text.indexOf('\n', i + 2) === -1 ? n : text.indexOf('\n', i + 2));
+				const endMark = open === '(' ? ')' : ']';
+				let close = -1;
+				for (let j = i + 2; j < limit; j++) {
+					if (text[j] !== '\\') continue;
+					if (text[j + 1] === endMark) { close = j; break; }
+					j++; // Skip escaped characters and doubled backslashes.
+				}
+				if (close > i + 2) {
+					const src = text.slice(i + 2, close);
+					out.push({ kind: open === '(' ? 'inline' : 'display', src, start: i, end: close + 2, line });
+					for (const c of src) if (c === '\n') line++;
+					i = close + 2;
+					continue;
+				}
+			}
 			i += 2;
 			continue;
 		}
@@ -122,6 +140,16 @@ export function scanMath(text: string): MathSegment[] {
 		i++;
 	}
 	return out;
+}
+
+/** Keep imported Markdown in the vault's standard dollar-delimiter format. */
+export function normaliseMathDelimiters(text: string): string {
+	for (const s of scanMath(text).reverse()) {
+		if (text[s.start] !== '\\') continue;
+		const delimiter = s.kind === 'display' ? '$$' : '$';
+		text = text.slice(0, s.start) + delimiter + s.src + delimiter + text.slice(s.end);
+	}
+	return text;
 }
 
 /**

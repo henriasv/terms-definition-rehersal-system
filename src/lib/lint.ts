@@ -23,6 +23,8 @@ export interface LintIssue {
 
 export interface LintContext {
 	terms: Term[];
+	/** Assets owned by paper manifests, including papers not yet converted to cards. */
+	referencedAssets?: Iterable<string>;
 	/** Basenames of files present in Assets/. */
 	assets: Set<string>;
 }
@@ -106,7 +108,7 @@ export function lintTerm(term: Term, ctx: LintContext): LintIssue[] {
 
 /** Files in Assets/ that no term embeds. */
 export function orphanAssets(ctx: LintContext): string[] {
-	const used = new Set<string>();
+	const used = new Set<string>(ctx.referencedAssets);
 	for (const t of ctx.terms) for (const m of t.body.matchAll(WIKILINK)) if (m[1]) used.add(m[2].trim());
 	return [...ctx.assets].filter((a) => !used.has(a) && !a.startsWith('.')).sort();
 }
