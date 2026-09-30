@@ -7,6 +7,7 @@ import { parseSuggestions,type Paper } from '../src/lib/papers.ts';
 import { nextStudyState,validatePack,validateProgress } from '../src/lib/study.ts';
 import { createTerm,readLog,readTerm,appendLog } from '../src/lib/server/vault.ts';
 import { acceptPaper } from '../src/lib/server/papers.ts';
+import { paperPreviews } from '../src/lib/server/paper-preview.ts';
 import { exportStudyPack,importPhoneProgress } from '../src/lib/server/study.ts';
 import { review,serializeCard } from '../src/lib/reviews.ts';
 const dirs:string[]=[];
@@ -14,6 +15,10 @@ afterEach(async()=>{await Promise.all(dirs.splice(0).map(d=>fs.rm(d,{recursive:t
 async function vault(){const dir=await fs.mkdtemp(path.join(tmpdir(),'paper-study-'));dirs.push(dir);await fs.mkdir(path.join(dir,'Terms'));return dir;}
 const suggestions=[{kind:'term',question:'Adsorption',answer:'Accumulation at an interface.',evidence:'Surface accumulation.',location:'Introduction'}];
 describe('paper study',()=>{
+	it('normalizes equations in imported questions and answers without changing evidence',()=>{
+		const result=parseSuggestions([{kind:'concept',question:'What is \\(pK_a\\)?',answer:'Uses \\(\\text{Na}^+\\).',evidence:'Quoted \\(pK_a\\).'}])[0];
+		expect(result.question).toBe('What is $pK_a$?');expect(result.answer).toBe('Uses $\\text{Na}^+$.');expect(result.evidence).toBe('Quoted \\(pK_a\\).');
+	});
   it('rejects malformed model responses and empty answers',()=>{expect(()=>parseSuggestions({cards:[{question:'x',answer:''}]})).toThrow();expect(()=>parseSuggestions('not JSON')).toThrow();expect(parseSuggestions(suggestions)[0]).toMatchObject({id:'1',selected:true,kind:'term'});});
   it('links existing terms without overwriting definitions, and creates one-way result cards',async()=>{
     const dir=await vault();await createTerm({term:'Adsorption',definition:'My checked definition.',source:'Textbook'},dir);
@@ -22,6 +27,7 @@ describe('paper study',()=>{
     const saved=await acceptPaper(id,paper.suggestions,dir);const term=await readTerm('adsorption',dir);
     expect(term.definition.trim()).toBe('My checked definition.');expect(term.fm.source).toBe('Textbook');expect(term.fm.tags).toContain(`paper/${id}`);
     expect((await readTerm(saved.suggestions[1].slug!,dir)).fm.reverse).toBe(false);
+    const previews=await paperPreviews(saved,dir);expect(previews['1'].answerHtml).toContain('My checked definition.');expect(previews['1'].answerHtml).not.toContain('Accumulation at an interface.');
     expect((await acceptPaper(id,paper.suggestions,dir)).suggestions.filter(c=>c.slug)).toHaveLength(2);
   });
   it('exports both directions and imports phone reviews exactly once',async()=>{

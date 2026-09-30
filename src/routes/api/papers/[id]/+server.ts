@@ -1,8 +1,12 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { acceptPaper, extractPaper, paperJobRunning, readPaper } from '$lib/server/papers';
 import { fail } from '$lib/server/http';
+import { paperPreviews } from '$lib/server/paper-preview';
 export const GET: RequestHandler = async ({ params }) => {
-	try { return json({ paper: await readPaper(params.id!), running: paperJobRunning(params.id!) }); } catch (e) { return fail(e); }
+	try {
+		const paper = await readPaper(params.id!);
+		return json({ paper, running: paperJobRunning(params.id!), previews: await paperPreviews(paper) });
+	} catch (e) { return fail(e); }
 };
 export const POST: RequestHandler = async ({ request, params }) => {
 	try {

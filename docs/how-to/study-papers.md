@@ -8,6 +8,10 @@ Add a PDF under 40 MB and optionally give it a title. It is saved under `Assets/
 
 Choose **Add selected** to write the approved cards into ordinary term Markdown files. Existing terms matched by name or alias keep their current definitions and sources and gain a paper association. Questions about methods and results have reverse cards disabled. Choose **Study this paper** to review only that paper's cards.
 
+Suggestions open as rendered question-and-answer previews. Search their text or filter by card type; **Select shown** and **Clear shown** apply to the current results. Use **Edit suggestion** for a question, card type, or Markdown answer, then **Done editing · preview** to check it. The add button stays visible below the scrolling cards. Saving a subset keeps other edited suggestions in the page until you add them; leaving with unsaved edits prompts you first. Saved cards link to their normal editor in a separate tab.
+
+**Study this paper** starts the paper's review immediately. Questions fit a reading size, the card scrolls internally, and the reveal/rating controls stay visible. Existing NotebookLM equations written with `\(...\)` or `\[...\]` render as math; new imports normalize them to `$...$` or `$$...$$` in the vault.
+
 Paper manifests are `Papers/<UUID>.json`. They record extraction state, the NotebookLM notebook identifier, suggestions and accepted term slugs. Uploaded PDFs are protected from the CLI's orphan-asset cleanup, including while extraction is unfinished. Include paper manifests in the private vault's version control; PDFs can use the existing Drive-backed Assets folder.
 
 Failed or interrupted extraction can be retried with the same notebook. Retrying after cards have been accepted is intentionally unavailable; upload another copy if you need a new extraction. Extraction runs while the local app is running.

@@ -1,4 +1,5 @@
 /** Portable paper suggestions. Model output is untrusted input. */
+import { normaliseMathDelimiters } from './math.ts';
 export type PaperCardKind = 'term' | 'method' | 'result' | 'limitation' | 'concept';
 export interface PaperSuggestion {
 	id: string;
@@ -35,6 +36,6 @@ export function parseSuggestions(value: unknown): PaperSuggestion[] {
 		};
 		const question=read('question',600,true);
 		if(/[\r\n]/.test(question))throw new Error(`Keep the question on one line in card ${index+1}.`);
-		return { id: String(index + 1), kind: kinds.has(row.kind) ? row.kind : 'concept', question, answer: read('answer', 12000, true), evidence: read('evidence', 3000), location: read('location', 300), selected: true };
+		return { id: String(index + 1), kind: kinds.has(row.kind) ? row.kind : 'concept', question: normaliseMathDelimiters(question), answer: normaliseMathDelimiters(read('answer', 12000, true)), evidence: read('evidence', 3000), location: read('location', 300), selected: true };
 	});
 }
