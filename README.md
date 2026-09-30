@@ -7,7 +7,7 @@ The look is the "Classical" system from a Claude Design project: serif type, hai
 Two parts share one folder on disk:
 
 - **The vault** — a git repo you own: `Terms/*.md`, `Assets/`, `reviews.jsonl`. Plain files; also opens as an Obsidian vault.
-- **The app** — a local web app (SvelteKit, runs on your machine) plus a small CLI. Both read and write the vault directly. Nothing leaves your computer.
+- **The app** — a local web app (SvelteKit, runs on your machine) plus a small CLI. Both read and write the vault directly. Optional paper extraction uploads PDFs to your NotebookLM account; the private phone app receives approved study cards and their illustrations.
 
 ## Quick start
 
@@ -31,6 +31,7 @@ pnpm terms lint                # dialect mismatches, render errors, broken links
 
 - **New here?** → [Tutorial: getting started](docs/tutorial/getting-started.md)
 - **Doing a specific thing?** → [How-to guides](docs/how-to/)
+- **Study papers and use your phone?** → [Paper study and phone connection](docs/how-to/study-papers.md)
 - **Exact details?** → [Reference](docs/reference/)
 - **Why it is shaped this way?** → [Explanation](docs/explanation/)
 - [Known limitations](docs/KNOWN_LIMITATIONS.md)

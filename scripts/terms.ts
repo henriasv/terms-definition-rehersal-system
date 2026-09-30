@@ -19,6 +19,7 @@ import { loadConfig, vaultPath } from '../src/lib/server/config.ts';
 import { lintVault } from '../src/lib/server/lint.ts';
 import { cardStates, createTerm, deleteAsset, listAssets, listTerms, readLog, renameTerm } from '../src/lib/server/vault.ts';
 import { orphanAssets } from '../src/lib/lint.ts';
+import { listPapers } from '../src/lib/server/papers.ts';
 import { buildQueue, trainingSet } from '../src/lib/reviews.ts';
 import { termHasTag } from '../src/lib/term.ts';
 
@@ -95,8 +96,8 @@ async function main() {
 		}
 		case 'assets': {
 			const prune = flag('prune');
-			const [terms, assets] = await Promise.all([listTerms(), listAssets()]);
-			const orphans = orphanAssets({ terms, assets });
+			const [terms, assets, papers] = await Promise.all([listTerms(), listAssets(), listPapers()]);
+			const orphans = orphanAssets({ terms, assets, referencedAssets: papers.map(p=>p.asset) });
 			for (const a of orphans) {
 				if (prune) await deleteAsset(a);
 				console.log(`${prune ? 'deleted ' : 'orphan  '} Assets/${a}`);

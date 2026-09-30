@@ -11,6 +11,14 @@ export const TERMS_DIR = 'Terms';
 export const ASSETS_DIR = 'Assets';
 export const LOG_FILE = 'reviews.jsonl';
 export const CACHE_DIR = '.cache';
+const reviewLocks=new Map<string,Promise<void>>();
+/** Serialize read/compute/append operations within this desktop app process. */
+export async function withReviewWrite<T>(action:()=>Promise<T>,vault=vaultPath()):Promise<T>{
+	const previous=reviewLocks.get(vault)??Promise.resolve();
+	let release!:()=>void;const next=new Promise<void>(resolve=>{release=resolve;});reviewLocks.set(vault,next);
+	await previous;
+	try{return await action();}finally{release();if(reviewLocks.get(vault)===next)reviewLocks.delete(vault);}
+}
 
 export class VaultError extends Error {
 	constructor(

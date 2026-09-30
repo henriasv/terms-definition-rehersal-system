@@ -2,7 +2,7 @@
 
 Recorded from the design conversation (September 2026) so later changes can be judged against the original intent.
 
-**Computer only.** Reviewing happens at the desk, so the app is a local server that reads the vault folder directly. No GitHub API, no sync layer, no token. A phone surface (Telegram via nanoclaw, as the literature vault does) can be added later; it would only need to call the same functions in `src/lib/server/`.
+**Desktop vault plus private phone study.** The desktop app reads the vault folder directly. September 30: paper ingestion and phone review were requested. NotebookLM runs through an isolated local Python client; its Google session stays on the computer. A private hosted Site stores a study copy and phone review events. A paired hosted browser tab on the computer transfers cards and reviews automatically, with file import/export as a fallback. The Markdown vault and append-only local review log remain the main collection.
 
 **Typst through the CLI, not WASM.** Because the app is local, `typst compile` is available, complete (packages, fonts, tables) and cached per snippet. In-browser typst.ts was the alternative and is still possible if the app ever leaves the machine.
 
@@ -23,3 +23,7 @@ Recorded from the design conversation (September 2026) so later changes can be j
 **Define is a queue, not a list.** Undefined terms are worked through one at a time with save-and-next, so capturing ten terms in a lecture and defining them that evening is a linear pass rather than ten page visits.
 
 **Links, no graph.** `[[wikilinks]]` resolve by slug, name or alias, and Obsidian will draw a graph if wanted. The app itself does not build one.
+
+**Paper contents, not only terminology.** Paper extraction suggests terminology, concepts, methods, results and limitations. Suggestions are reviewed before becoming cards. Existing term definitions are preserved; paper-specific questions use one-way cards and carry evidence and source references. Paper membership uses `paper/<UUID>` tags; a manifest keeps the readable paper title and processing state.
+
+**Phone reviews are append-only too.** Stable review IDs prevent duplicate imports. Every phone event includes its previous scheduling state; a conflicting local state is reported before any new reviews from that file are appended. Hosted writes use optimistic versions and idempotent review IDs.

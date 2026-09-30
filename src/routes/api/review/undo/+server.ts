@@ -1,11 +1,11 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { loadConfig } from '$lib/server/config';
 import { fail } from '$lib/server/http';
-import { appendLog, readLog } from '$lib/server/vault';
+import { appendLog, readLog, withReviewWrite } from '$lib/server/vault';
 import { previewIntervals, reduceLogWithHistory } from '$lib/reviews';
 
 /** Body: { card } → appends an undo event for the card's most recent review. */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request }) => withReviewWrite(async () => {
 	try {
 		const { card } = await request.json();
 		if (!/^[^#/\\]+#(fwd|rev)$/.test(String(card))) return json({ error: 'bad card key' }, { status: 400 });
@@ -19,4 +19,4 @@ export const POST: RequestHandler = async ({ request }) => {
 	} catch (e) {
 		return fail(e);
 	}
-};
+});

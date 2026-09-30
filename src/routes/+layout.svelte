@@ -16,6 +16,8 @@
 		<a href="/terms" aria-current={current('/terms') ? 'page' : undefined}>Terms</a>
 		<a href="/define" aria-current={current('/define') ? 'page' : undefined} style="display:inline-flex;align-items:center;gap:6px">Define{#if data.todo}<span class="tag tag-outline" style="font-size:10px;padding:1px 7px;font-variant-numeric:tabular-nums">{data.todo}</span>{/if}</a>
 		<a href="/review" aria-current={current('/review') ? 'page' : undefined}>Review</a>
+		<a href="/papers" aria-current={current('/papers') ? 'page' : undefined}>Papers</a>
+		<a href="/phone" aria-current={current('/phone') ? 'page' : undefined}>Phone</a>
 		<a href="/lint" aria-current={current('/lint') ? 'page' : undefined}>Lint</a>
 		<span class="vault" title="Vault folder">{data.vault}</span>
 	</nav>

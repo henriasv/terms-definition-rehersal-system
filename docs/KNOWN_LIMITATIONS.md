@@ -1,7 +1,9 @@
 # Known limitations
 
 - **Single machine, single user.** No auth, binds to localhost. Sync between machines is git, done by you.
-- **No phone surface yet.** Capture and review are desktop only. A Telegram agent could call the same server functions.
+- **Phone sync needs the computer's hosted tab.** The private Paper Study app saves cards and progress online. Automatic transfer to/from the local vault needs the desktop app and a paired Paper Study tab running on the computer. Phone review works while the computer is off. File transfer is available as a fallback.
+- **NotebookLM uses unofficial interfaces.** Google changes can break the integration or require signing in again. Extraction runs on the computer; approved cards can be reviewed on the phone.
+- **Concurrent offline reviews can conflict.** Reviewing the same card in both apps before they sync pauses import for recovery rather than silently replacing either history.
 - **Light theme only.** The design system defines no dark palette; the app follows it.
 - **Typst needs the CLI.** Without `typst` on `PATH`, typst snippets show an error instead of rendering. LaTeX needs nothing.
 - **Inline typst alignment is approximate for tall content.** Snippets taller than 1.5 em above the baseline sit slightly high.
