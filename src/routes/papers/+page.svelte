@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { api } from '$lib/client/api';
 	import type { Paper } from '$lib/papers';
 	let { data } = $props();
@@ -19,9 +18,15 @@
 		busy = true; error = '';
 		try {
 			const body = new FormData(); body.set('pdf', file); body.set('title', title);
-			const result = await api<{id: string}>('/api/papers', { method: 'POST', body });
-			await goto(`/papers/${result.id}`);
-		} catch (e) { error = (e as Error).message; } finally { busy = false; }
+			const result = await api<{id: string}>('/api/papers', { method: 'POST', body, signal: AbortSignal.timeout(120_000) });
+			// Start the results page in a fresh document instead of keeping the upload
+			// screen busy while client-side navigation initializes the card editors.
+			window.location.assign(`/papers/${encodeURIComponent(result.id)}`);
+		} catch (e) {
+			error = (e as Error).name === 'TimeoutError'
+				? 'The upload did not respond within two minutes. Reload Papers and check whether the paper was saved before trying again.'
+				: (e as Error).message;
+		} finally { busy = false; }
 	}
 </script>
 <svelte:head><title>Papers · Terms</title></svelte:head>
