@@ -26,4 +26,4 @@ Reviewing the same card independently in the local and hosted apps while disconn
 
 The hosted source is a separate Sites repository, checked out locally under ignored `phone/`. Its project ID is `appgprj_6abcd663d2208191961684a83a68c4fe`; reopen that Site's source rather than registering a replacement. The shared interchange/scheduling module is `src/lib/study.ts`, copied to `phone/lib/study.ts` for independent deployment.
 
-For production desktop use, allow PDF uploads: `HOST=127.0.0.1 PORT=5173 BODY_SIZE_LIMIT=45M node build`. Bind to loopback; the local desktop app itself has no public-user authentication.
+For production desktop use, run `pnpm build` then `pnpm start` and open `http://127.0.0.1:5173`. The launcher sets the matching HTTP origin and allows PDF uploads. Bind to loopback; the local desktop app itself has no public-user authentication.

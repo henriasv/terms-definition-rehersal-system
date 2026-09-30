@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { api } from '$lib/client/api';
 	import type { Paper } from '$lib/papers';
 	let { data } = $props();
 	let title = $state(''); let file: File | undefined = $state();
 	let busy = $state(false); let error = $state(''); let connection = $state('');
 	async function checkConnection() {
 		connection = 'Checking…';
-		try { const r = await fetch('/api/notebooklm'); const result = await r.json(); connection = result.connected ? 'NotebookLM connected' : result.message; }
-		catch { connection = 'Could not check the connection.'; }
+		try { const result = await api<{connected: boolean; message: string}>('/api/notebooklm'); connection = result.connected ? 'NotebookLM connected' : result.message; }
+		catch(e) { connection = (e as Error).message; }
 	}
 	async function connect() {
-		try { const response=await fetch('/api/notebooklm',{method:'POST'});const result=await response.json();if(!response.ok)throw new Error(result.error);connection='Complete the Google sign-in in the browser window, then check the connection.'; }
+		try { await api('/api/notebooklm',{method:'POST'});connection='Complete the Google sign-in in the browser window, then check the connection.'; }
 		catch(e){connection=(e as Error).message;}
 	}
 	async function upload(event: SubmitEvent) {
@@ -18,8 +19,7 @@
 		busy = true; error = '';
 		try {
 			const body = new FormData(); body.set('pdf', file); body.set('title', title);
-			const response = await fetch('/api/papers', { method: 'POST', body }); const result = await response.json();
-			if (!response.ok) throw new Error(result.error);
+			const result = await api<{id: string}>('/api/papers', { method: 'POST', body });
 			await goto(`/papers/${result.id}`);
 		} catch (e) { error = (e as Error).message; } finally { busy = false; }
 	}
